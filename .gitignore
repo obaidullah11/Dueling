@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django stuff:
+*.log
+local_settings.py
+django 
+db.sqlite3-journal  # SQLite journal file
+
+# Media and static files
+media/
+staticfiles/
+
+# Ignore migrations (if you don't want to include them in version control)
+**/migrations/
+
+# Ignore virtual environment folders
+venv/
+env/
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+# Ignore files created by macOS
+.DS_Store
