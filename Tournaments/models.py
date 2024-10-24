@@ -27,10 +27,16 @@ class Tournament(models.Model):
     tournament_name = models.CharField(max_length=255)
     email_address = models.EmailField()
     contact_number = models.CharField(max_length=15)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    
+    # New fields for event details
+    event_date = models.DateField()  # The date when the event will occur
+    event_start_time = models.TimeField()  # The start time of the event
+    last_registration_date = models.DateField()  # Last date for participants to register
+    
     tournament_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # Optional
     banner_image = CustomImageField(upload_to='tournament_banners/', blank=True, null=True)  # Optional
+    
+    # Foreign key to the Game model
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='tournaments')
 
     def __str__(self):

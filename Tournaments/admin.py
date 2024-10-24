@@ -7,9 +7,18 @@ class GameAdmin(admin.ModelAdmin):
 
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
-    list_display = ('id','tournament_name', 'email_address', 'contact_number', 'start_date', 'end_date', 'tournament_fee', 'game')  # Display relevant fields in the admin list view
-    list_filter = ('start_date', 'end_date', 'game')  # Filters to help search by date or game
-    search_fields = ('tournament_name', 'email_address', 'contact_number')  # Searchable fields
+    # Updated list_display to show new fields
+    list_display = (
+        'id', 'tournament_name', 'email_address', 'contact_number', 
+        'event_date', 'event_start_time', 'last_registration_date', 
+        'tournament_fee', 'game'
+    )
+    
+    # Updated list_filter to filter by event_date and game
+    list_filter = ('event_date', 'game')  
+    
+    # Keep the search fields as they are relevant
+    search_fields = ('tournament_name', 'email_address', 'contact_number')  
 class ParticipantAdmin(admin.ModelAdmin):
     list_display = ('user', 'tournament', 'registration_date', 'payment_status', 'total_score')  # Fields to display in the admin list view
     search_fields = ('user__username', 'tournament__tournament_name')  # Allow searching by user or tournament name

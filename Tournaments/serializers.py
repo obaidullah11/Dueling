@@ -7,7 +7,12 @@ class TournamentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tournament
-        fields = ['tournament_name', 'email_address', 'contact_number', 'start_date', 'end_date', 'tournament_fee', 'banner_image', 'game_name']
+        # Updated fields list with new fields
+        fields = [
+            'tournament_name', 'email_address', 'contact_number', 
+            'event_date', 'event_start_time', 'last_registration_date', 
+            'tournament_fee', 'banner_image', 'game_name'
+        ]
     
     def create(self, validated_data):
         game_name = validated_data.pop('game_name')
@@ -19,7 +24,6 @@ class TournamentSerializer(serializers.ModelSerializer):
         validated_data['game'] = game
 
         return super().create(validated_data)
-    
 
 
 class GameSerializer(serializers.ModelSerializer):
@@ -32,7 +36,12 @@ class getTournamentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tournament
-        fields = ['tournament_name', 'email_address', 'contact_number', 'start_date', 'end_date', 'tournament_fee', 'banner_image', 'game_name']
+        # Updated fields list with new fields
+        fields = [
+            'tournament_name', 'email_address', 'contact_number', 
+            'event_date', 'event_start_time', 'last_registration_date', 
+            'tournament_fee', 'banner_image', 'game_name'
+        ]
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
