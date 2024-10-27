@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     # 'Garage',
     # 'Maintenance',
     'sslserver',
+    'chat',
 
     # 'Dueling_Admin',
     # 'sortedm2m',

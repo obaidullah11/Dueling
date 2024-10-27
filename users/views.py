@@ -129,27 +129,6 @@ def set_new_password(request):
 
 
 
-
-# from .serializers import
-class CompanyCheckAPIView(APIView):
-    def post(self, request, format=None):
-        serializer = CompanyCheckSerializer(data=request.data)
-        if serializer.is_valid():
-            company_name = serializer.validated_data['company']
-            try:
-                company = Company.objects.get(name__iexact=company_name)
-                return Response({'success': True, 'message': 'Company found in database.'}, status=status.HTTP_200_OK)
-            except Company.DoesNotExist:
-                return Response({'success': False, 'message': 'Company not found in database.'}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-class CompanyCreateAPIView(APIView):
-    def post(self, request, format=None):
-        serializer = CompanySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()  # Save validated data to create a new Company instance
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class UserDeleteAPIView(APIView):
     def delete(self, request, custom_id, format=None):
         try:
@@ -422,7 +401,56 @@ class VerifyOTP(APIView):
 #         else:
 #             return Response({'success': False, 'errors': {'non_field_errors': ['Email or Password is not Valid']}}, status=status.HTTP_404_NOT_FOUND)
 
+class UseradminLoginView(APIView):
+    def post(self, request, format=None):
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        password = serializer.validated_data.get('password')
 
+        # Check if user exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Email or Password is not valid.'
+            }, status=status.HTTP_200_OK)
+
+        # Check if user is verified
+        
+        
+
+        # Authenticate user
+        user = authenticate(username=email, password=password)  # Use email as username for authentication
+
+        if user is not None:
+            # Check if the user is an admin
+            if user.user_type != 'admin':
+                return Response({
+                    'success': False,
+                    'message': 'Access denied. Only admin users can log in here.'
+                }, status=status.HTTP_200_OK)
+
+            # Generate JWT token
+            refresh = RefreshToken.for_user(user)
+            token = str(refresh.access_token)
+            profile_serializer = UserProfileSerializer(user)  # Serialize User instance if needed
+            
+            return Response({
+                'success': True,
+                'is_verified': user.verify,
+                'id': user.id,
+                'token': token,
+                'profile': profile_serializer.data if profile_serializer else None,
+                'message': 'Login successful.'
+            }, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({
+                'success': False,
+                'message': 'Email or Password is not valid.'
+            }, status=status.HTTP_200_OK)
 class UserLoginView(APIView):
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)

@@ -38,7 +38,8 @@ class Tournament(models.Model):
     
     # Foreign key to the Game model
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='tournaments')
-
+    is_draft = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments', null=True)
     def __str__(self):
         return self.tournament_name
 class Deck(models.Model):
@@ -62,6 +63,9 @@ class Participant(models.Model):
     registration_date = models.DateField(auto_now_add=True)
     payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
     total_score = models.IntegerField(default=0) 
+    is_disqualified = models.BooleanField(default=False)
+    arrived_at_venue = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.username} - {self.tournament.tournament_name} ({self.payment_status})"
     

@@ -1,9 +1,32 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 from users.models import User
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from users.utils import Util
+class AdminLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+        
+        user = authenticate(email=email, password=password)
+        if user is None:
+            raise serializers.ValidationError("Invalid login credentials.")
+        
+        # Check if the user is an admin
+        if user.user_type != 'admin':
+            raise serializers.ValidationError("Access denied. User is not an admin.")
+        
+        # Check if the user is active
+        if not user.is_active:
+            raise serializers.ValidationError("This account is inactive.")
+        
+        data['user'] = user
+        return data
 
 class SocialRegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)

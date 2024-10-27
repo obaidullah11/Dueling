@@ -9,7 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/', include('users.urls')),
     path('', include('Tournaments.urls')),
-    # path('', include('interests.urls')),
+    path('', include('chat.urls')),
     # path('', include('notifications.urls')),
 
     # Add path for WebSocket connections
