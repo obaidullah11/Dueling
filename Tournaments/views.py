@@ -371,7 +371,7 @@ class TournamentViewSet(viewsets.ViewSet):
                 tournament=tournament, is_disqualified=True
             ).select_related('user')
 
-            tournament_data = TournamentSerializer(tournament).data
+            tournament_data = TournamentSerializernew(tournament).data
             tournament_data['paid_participants'] = ParticipantSerializer(paid_participants, many=True).data
             tournament_data['disqualified_participants'] = ParticipantSerializer(disqualified_participants, many=True).data
             tournaments_data.append(tournament_data)

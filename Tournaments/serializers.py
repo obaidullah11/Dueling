@@ -15,7 +15,7 @@ class TournamentSerializer(serializers.ModelSerializer):
         fields = [
             'id','tournament_name', 'email_address', 'contact_number',
             'event_date', 'event_start_time', 'last_registration_date',
-            'tournament_fee', 'banner_image', 'game_name', 'is_draft', 'created_by'
+            'tournament_fee', 'banner_image', 'game_name', 'is_draft', 'created_by',
         ]
     
     def create(self, validated_data):
@@ -120,7 +120,8 @@ class ParticipantSerializer(serializers.ModelSerializer):
 
 class TournamentSerializernew(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)  # Include participants
-
+    game_name = serializers.CharField(source='game.name', read_only=True)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
     class Meta:
         model = Tournament
         fields = [
@@ -135,6 +136,9 @@ class TournamentSerializernew(serializers.ModelSerializer):
             'banner_image', 
             'venue',
             'is_draft',
+            'game_name',
+            'created_by',
+            'created_at',
             'participants'  # Add this line
         ]
 class ScoreSerializer(serializers.ModelSerializer):
