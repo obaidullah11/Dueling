@@ -400,7 +400,30 @@ class VerifyOTP(APIView):
 #             return Response({'success': True, 'id': user.id, 'token': token, 'profile': profile_serializer.data}, status=status.HTTP_200_OK)
 #         else:
 #             return Response({'success': False, 'errors': {'non_field_errors': ['Email or Password is not Valid']}}, status=status.HTTP_404_NOT_FOUND)
+class UpdatePasswordViewnew(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        new_password = request.data.get("new_password")
 
+        if not email or not new_password:
+            return Response(
+                {"error": "Email and new password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(email=email)
+            user.set_password(new_password)  # Use set_password to properly hash the password
+            user.save()
+            return Response(
+                {"success": "Password updated successfully."},
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User with this email does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 class UseradminLoginView(APIView):
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)

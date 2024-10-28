@@ -46,7 +46,7 @@ class DraftTournamentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = [
-            'id','tournament_name', 'email_address', 'contact_number',
+            'id','tournament_name', 'email_address', 'contact_number','venue',
             'event_date', 'event_start_time', 'last_registration_date',
             'tournament_fee', 'banner_image', 'game_name', 'is_draft'
         ]
@@ -107,7 +107,7 @@ class getTournamentSerializer(serializers.ModelSerializer):
         model = Tournament
         # Updated fields list with new fields
         fields = [
-            'tournament_name', 'email_address', 'contact_number', 
+            'tournament_name', 'email_address', 'contact_number', 'venue',
             'event_date', 'event_start_time', 'last_registration_date', 
             'tournament_fee', 'banner_image', 'game_name'
         ]
@@ -133,6 +133,7 @@ class TournamentSerializernew(serializers.ModelSerializer):
             'last_registration_date',
             'tournament_fee', 
             'banner_image', 
+            'venue',
             'is_draft',
             'participants'  # Add this line
         ]

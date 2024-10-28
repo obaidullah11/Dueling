@@ -37,6 +37,7 @@ class Tournament(models.Model):
     banner_image = CustomImageField(upload_to='tournament_banners/', blank=True, null=True)  # Optional
     
     # Foreign key to the Game model
+    venue = models.CharField(max_length=255, blank=True, null=True)  # Optional venue for the tournament
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='tournaments')
     is_draft = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments', null=True)
