@@ -17,11 +17,20 @@ class CustomImageField(models.ImageField):
         self.max_length = kwargs.pop('max_length', 150)
         super().__init__(*args, **kwargs)
 
-    def clean(self, *args, **kwargs):
-        file_name = self.file.name
-        if len(file_name) > self.max_length:
-            raise ValidationError(f'Ensure this filename has at most {self.max_length} characters (it has {len(file_name)}).')
-        return super().clean(*args, **kwargs)
+    def clean(self, value, model_instance):
+        # Check if value is provided; if not, return without any validation
+        if value is None:
+            return super().clean(value, model_instance)
+        
+        # Ensure value is an instance of UploadedFile to access the file attribute
+        if hasattr(value, 'name'):
+            file_name = value.name  # Use value.name instead of self.file.name
+            if len(file_name) > self.max_length:
+                raise ValidationError(
+                    f'Ensure this filename has at most {self.max_length} characters (it has {len(file_name)}).'
+                )
+        
+        return super().clean(value, model_instance)
 
 class Tournament(models.Model):
     tournament_name = models.CharField(max_length=255)
@@ -42,6 +51,7 @@ class Tournament(models.Model):
     is_draft = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments', null=True)
     created_at = models.DateTimeField(auto_now_add=True) 
+    featured = models.BooleanField(default=False)
     def __str__(self):
         return self.tournament_name
 class Deck(models.Model):

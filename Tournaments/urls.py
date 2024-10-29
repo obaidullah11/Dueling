@@ -31,8 +31,8 @@ urlpatterns = [
     path('tournaments/<int:tournament_id>/disqualify_user/<int:user_id>/', TournamentViewSet.as_view({'post': 'disqualify_user'})),
     path('participants/arrive-at-venue/', ParticipantViewSet.as_view({'patch': 'arrive_at_venue'}), name='arrive-at-venue'),
     path('tournaments/<int:pk>/eligible-participants/', TournamentViewSet.as_view({'get': 'eligible_participants'}), name='eligible-participants'),
-
-
+    path('gettournaments/', TournamentViewSet.as_view({'get': 'all_tournaments'}), name='all-tournaments'),  # To get all tournaments
+    path('create_feature/<int:tournament_id>/', UpdateFeaturedTournamentView.as_view(), name='update-featured'),
 
 
     path('user/register/<int:user_id>/', register_for_tournament, name='register-for-tournament'),

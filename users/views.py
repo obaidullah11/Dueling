@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework import generics
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import APIView
@@ -223,7 +224,26 @@ class UserUpdateAPIView(APIView):
             return Response({'success': True, 'message': 'User data updated successfully'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserDetailView(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+    lookup_field = 'id'
 
+    def get(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+            serializer = self.get_serializer(user)
+            return Response({
+                "status": True,
+                "message": "User retrieved successfully.",
+                "data": serializer.data
+            })
+        except User.DoesNotExist:
+            return Response({
+                "status": False,
+                "message": "User not found.",
+                "data": None
+            }, status=status.HTTP_404_NOT_FOUND)
 # class UserRegistrationView(APIView):
 #     renderer_classes = [UserRenderer]
 

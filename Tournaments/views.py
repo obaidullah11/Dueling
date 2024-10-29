@@ -2,6 +2,7 @@
 from rest_framework import generics
 from rest_framework import status
 from .models import Tournament
+from rest_framework.views import APIView
 from .serializers import *
 from django.shortcuts import get_object_or_404
 from .utils import api_response
@@ -381,6 +382,19 @@ class TournamentViewSet(viewsets.ViewSet):
             'message': 'Active tournaments retrieved successfully.',
             'data': tournaments_data
         }, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['get'])
+    def all_tournaments(self, request):
+        """API to get all tournaments where is_draft is False."""
+        tournaments = Tournament.objects.filter(is_draft=False)
+        
+        # Serialize the tournament data
+        tournament_data = TournamentSerializer(tournaments, many=True).data
+        
+        return Response({
+            'success': True,
+            'message': 'Tournaments retrieved successfully.',
+            'data': tournament_data
+        })
     @action(detail=False, methods=['post'], url_path='disqualify_user/(?P<user_id>[^/.]+)')
     def disqualify_user(self, request, tournament_id, user_id):
         """API to disqualify a user from a tournament."""
@@ -517,3 +531,22 @@ class ParticipantViewSet(viewsets.ModelViewSet):
 
         except Participant.DoesNotExist:
             return Response({'error': 'Participant not found for this tournament.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UpdateFeaturedTournamentView(APIView):
+    def patch(self, request, tournament_id):
+        try:
+            tournament = Tournament.objects.get(id=tournament_id)
+        except Tournament.DoesNotExist:
+            return Response({'error': 'Tournament not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the featured status
+        tournament.featured = not tournament.featured  # If True -> False, if False -> True
+        tournament.save()
+
+        serializer = TournamentSerializer(tournament)
+        return Response({
+            'success': True,
+            'message': 'Featured status updated successfully.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

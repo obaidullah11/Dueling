@@ -1,5 +1,5 @@
 from django.urls import path
-from users.views import UpdatePasswordViewnew,UseradminLoginView,ResendOTPView,set_new_password,SocialLoginOrRegisterView,SendPasswordResetEmailView,VerifyOTP,list_users,UserUpdateAPIView, UserChangePasswordView, UserLoginView, UserProfileView, UserRegistrationView,UserDeleteAPIView, UserPasswordResetView
+from users.views import UserDetailView,UpdatePasswordViewnew,UseradminLoginView,ResendOTPView,set_new_password,SocialLoginOrRegisterView,SendPasswordResetEmailView,VerifyOTP,list_users,UserUpdateAPIView, UserChangePasswordView, UserLoginView, UserProfileView, UserRegistrationView,UserDeleteAPIView, UserPasswordResetView
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('login/', UserLoginView.as_view(), name='login'),
@@ -17,6 +17,6 @@ urlpatterns = [
     path('forgotpassword/', set_new_password, name='set_new_password'),
     path('resend_otp/', ResendOTPView.as_view(), name='resend_otp'),
     path('api/social_login_or_register/', SocialLoginOrRegisterView.as_view(), name='social_login_or_register'),
-    
+    path('user/<str:id>/', UserDetailView.as_view(), name='user_detail'),
     path("update-password/", UpdatePasswordViewnew.as_view(), name="update-password"),
 ]
