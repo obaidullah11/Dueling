@@ -210,7 +210,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, '../', 'static')
 # ]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=20),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 
 

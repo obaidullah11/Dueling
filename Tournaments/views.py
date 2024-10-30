@@ -11,9 +11,72 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.utils import timezone
 from .models import Tournament
-from .serializers import TournamentSerializer, DraftTournamentSerializer
+from .serializers import TournamentSerializer, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew
 
+
+
+class UserParticipantsView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            participants = Participant.objects.filter(user=user)
+            serializer = ParticipantSerializernew(participants, many=True)
+            return Response({
+                "success": True,
+                "message": "Participants retrieved successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "User not found.",
+                "data": []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+class TournamentByGameView(APIView):
+    def get(self, request, game_id):
+        # Filter tournaments based on the provided game_id
+        active_tournaments = Tournament.objects.filter(game_id=game_id)
+
+        # Initialize the list to hold tournament data
+        tournaments_data = []
+
+        for tournament in active_tournaments:
+            # Filter participants who have paid and are not disqualified
+            paid_participants = Participant.objects.filter(
+                tournament=tournament, payment_status='paid', is_disqualified=False
+            ).select_related('user')
+
+            # Filter participants who are disqualified
+            disqualified_participants = Participant.objects.filter(
+                tournament=tournament, is_disqualified=True
+            ).select_related('user')
+
+            # Serialize the tournament data
+            tournament_data = TournamentSerializernew(tournament).data
+
+            # Append the paid participants data
+            tournament_data['paid_participants'] = ParticipantSerializer(paid_participants, many=True).data
+
+
+
+
+            # Add the tournament data to the list
+            tournaments_data.append(tournament_data)
+
+        # Construct the response
+        return Response({
+            'success': True,
+            'message': 'Tournaments retrieved successfully.',
+            'data': tournaments_data
+        }, status=status.HTTP_200_OK)
 @api_view(['POST'])
 def create_banner_image(request):
     serializer = newBannerImageSerializer(data=request.data)
@@ -24,7 +87,7 @@ def create_banner_image(request):
             'message': 'Banner image uploaded successfully.',
             'data': BannerImageSerializer(banner_image).data
         }, status=status.HTTP_201_CREATED)
-    
+
     return Response({
         'success': False,
         'message': 'Failed to upload banner image.',
@@ -57,7 +120,7 @@ def create_featured_tournament(request):
                 'message': 'This tournament is already featured.',
                 'data': {}
             }, status=status.HTTP_400_BAD_REQUEST)
-            
+
     except Tournament.DoesNotExist:
         print(f"Tournament with id {tournament_id} does not exist.")  # Print error message
         return Response({
@@ -135,7 +198,7 @@ class TournamentListView(generics.ListAPIView):
             message="Tournaments retrieved successfully",
             data=serializer.data
         )
-    
+
 class RegisterForTournamentView(generics.CreateAPIView):
     serializer_class = ParticipantSerializer
 
@@ -231,7 +294,7 @@ def banner_image_detail(request, pk):
             'message': 'Banner image not found.',
             'data': {}
         }, status=status.HTTP_404_NOT_FOUND)
-    
+
 
 
 # views.py
@@ -320,11 +383,11 @@ class TournamentViewSet(viewsets.ViewSet):
         }, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['post'])
-    
+
 
     def save_draft(self, request, user_id):
         """API to save tournament as draft with user ID from URL."""
-        
+
         # Get the user instance from the user_id provided in the URL
         user = get_object_or_404(User, pk=user_id)
 
@@ -337,7 +400,7 @@ class TournamentViewSet(viewsets.ViewSet):
                 'message': 'Draft tournament saved successfully.',
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
-        
+
         return Response({
             'success': False,
             'message': 'Validation error.',
@@ -348,7 +411,7 @@ class TournamentViewSet(viewsets.ViewSet):
     def drafts(self, request, user_id):
         """API to get draft tournaments by user ID."""
         drafts = Tournament.objects.filter(created_by=user_id, is_draft=True)
-        serializer = DraftTournamentSerializer(drafts, many=True)
+        serializer = TournamentSerializernew(drafts, many=True)
         return Response({
             'success': True,
             'message': 'Draft tournaments retrieved successfully.',
@@ -366,7 +429,7 @@ class TournamentViewSet(viewsets.ViewSet):
             paid_participants = Participant.objects.filter(
                 tournament=tournament, payment_status='paid', is_disqualified=False
             ).select_related('user')
-            
+
             # Filter participants who are disqualified
             disqualified_participants = Participant.objects.filter(
                 tournament=tournament, is_disqualified=True
@@ -386,10 +449,10 @@ class TournamentViewSet(viewsets.ViewSet):
     def all_tournaments(self, request):
         """API to get all tournaments where is_draft is False."""
         tournaments = Tournament.objects.filter(is_draft=False)
-        
+
         # Serialize the tournament data
         tournament_data = TournamentSerializer(tournaments, many=True).data
-        
+
         return Response({
             'success': True,
             'message': 'Tournaments retrieved successfully.',
@@ -460,7 +523,7 @@ class TournamentViewSet(viewsets.ViewSet):
             is_disqualified=False,
             arrived_at_venue=True
         ).select_related('user')
-        
+
         # Serialize participants
         participants_data = ParticipantSerializer(participants, many=True).data
 
@@ -508,7 +571,7 @@ class ParticipantViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['patch'], url_path='arrive-at-venue')
     def arrive_at_venue(self, request):
         """
-        API endpoint for updating the 'arrived_at_venue' field 
+        API endpoint for updating the 'arrived_at_venue' field
         for a specific tournament without requiring authentication.
         """
         user_id = request.data.get('user_id')
@@ -550,3 +613,25 @@ class UpdateFeaturedTournamentView(APIView):
             'message': 'Featured status updated successfully.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+
+
+
+
+class FeaturedTournamentListView(APIView):
+    def get(self, request):
+        today = timezone.now().date()
+        tournaments = Tournament.objects.filter(featured=True, event_date__gt=today)
+
+        if tournaments.exists():
+            serializer = TournamentSerializer(tournaments, many=True)
+            return Response({
+                "success": True,
+                "message": "Featured tournaments retrieved successfully.",
+                "data": serializer.data
+            })
+        else:
+            return Response({
+                "success": False,
+                "message": "No featured tournaments available.",
+                "data": []
+            })

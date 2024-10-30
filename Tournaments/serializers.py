@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import *
 
 from rest_framework import serializers
-from .models import Tournament, Game
+from .models import Tournament, Game,Deck,Participant
 from users.models import User
 
 class TournamentSerializer(serializers.ModelSerializer):
@@ -17,11 +17,11 @@ class TournamentSerializer(serializers.ModelSerializer):
             'event_date', 'event_start_time', 'last_registration_date',
             'tournament_fee', 'banner_image', 'game_name', 'is_draft', 'created_by','created_at','featured',
         ]
-    
+
     def create(self, validated_data):
         # Extract game_name and remove it from validated_data
         game_name = validated_data.pop('game_name')
-        
+
         # Attempt to fetch the Game instance
         try:
             game = Game.objects.get(name=game_name)
@@ -43,6 +43,7 @@ class TournamentSerializer(serializers.ModelSerializer):
 class DraftTournamentSerializer(serializers.ModelSerializer):
     game_name = serializers.CharField(write_only=True)  # Field for passing the game name
 
+
     class Meta:
         model = Tournament
         fields = [
@@ -50,11 +51,11 @@ class DraftTournamentSerializer(serializers.ModelSerializer):
             'event_date', 'event_start_time', 'last_registration_date',
             'tournament_fee', 'banner_image', 'game_name', 'is_draft'
         ]
-    
+
     def create(self, validated_data):
         # Extract game_name and remove it from validated_data
         game_name = validated_data.pop('game_name')
-        
+
         # Attempt to fetch the Game instance
         try:
             game = Game.objects.get(name=game_name)
@@ -89,7 +90,7 @@ class DraftTournamentSerializer(serializers.ModelSerializer):
         # Update the instance with the validated data
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         instance.save()
         return instance
 
@@ -108,7 +109,7 @@ class getTournamentSerializer(serializers.ModelSerializer):
         # Updated fields list with new fields
         fields = [
             'tournament_name', 'email_address', 'contact_number', 'venue',
-            'event_date', 'event_start_time', 'last_registration_date', 
+            'event_date', 'event_start_time', 'last_registration_date',
             'tournament_fee', 'banner_image', 'game_name'
         ]
 class ParticipantSerializer(serializers.ModelSerializer):
@@ -125,21 +126,21 @@ class TournamentSerializernew(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = [
-            'id', 
-            'tournament_name', 
-            'email_address', 
+            'id',
+            'tournament_name',
+            'email_address',
             'contact_number',
-            'event_date', 
-            'event_start_time', 
+            'event_date',
+            'event_start_time',
             'last_registration_date',
-            'tournament_fee', 
-            'banner_image', 
+            'tournament_fee',
+            'banner_image',
             'venue',
             'is_draft',
             'game_name',
             'created_by',
             'created_at',
-            'featured'
+            'featured',
             'participants'  # Add this line
         ]
 class ScoreSerializer(serializers.ModelSerializer):
@@ -170,7 +171,7 @@ class newBannerImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = BannerImage
         fields = ['tournament', 'image']  # Include tournament ID and image field
-    
+
     def validate_tournament(self, value):
         if not value:
             raise serializers.ValidationError("Tournament is required.")
@@ -180,3 +181,18 @@ class newBannerImageSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Image file is required.")
         return value
+
+
+class DeckSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deck
+        fields = ['id', 'name']  # Add other fields as needed
+
+class ParticipantSerializernew(serializers.ModelSerializer):
+    # Include user details
+    tournament = TournamentSerializernew()  # Include tournament details
+    deck = DeckSerializer()  # Include deck details
+
+    class Meta:
+        model = Participant
+        fields = '__all__'  # Or specify the fields you want to include

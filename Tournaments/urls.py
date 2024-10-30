@@ -16,7 +16,9 @@ urlpatterns = [
     path('create/banner-image/', create_banner_image, name='create_banner_image'),
     # URL for retrieving a specific featured tournament by id
     path('featured-tournaments/<int:pk>/', featured_tournament_detail, name='featured_tournament_detail'),
-
+    path('api/featured-tournaments/', FeaturedTournamentListView.as_view(), name='featured-tournaments'),
+    path('tournaments_events/<int:game_id>/', TournamentByGameView.as_view(), name='tournaments_by_game'),
+    path('api/participants/<int:user_id>/', UserParticipantsView.as_view(), name='user-participants'),
     # URL for listing all banner images
     path('banner-images/', banner_image_list, name='banner_image_list'),
 

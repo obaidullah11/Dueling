@@ -374,23 +374,33 @@ class VerifyOTP(APIView):
         code = request.data.get('code')
 
         if not code:
-            return Response({'success': False,'error': 'Verification code is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'error': 'Verification code is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Retrieve the user based on the provided OTP code
             user = User.objects.get(otp_code=code)
         except User.DoesNotExist:
-            return Response({'success': False,'error': 'Please enter correct otp code. Thank you'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'error': 'Please enter correct OTP code. Thank you'}, status=status.HTTP_404_NOT_FOUND)
 
         # Now you have the user based on the OTP code
         # Proceed with your verification process
 
-        # For example, you can update the 'verify' field to True
+        # Update the 'verify' field to True
         user.verify = True
         user.save()
 
-        # Modify response message
-        return Response({'success': True, 'message': 'Verification successful'}, status=status.HTTP_200_OK)
+        # Generate JWT token
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        # Modify response message to include user ID
+        return Response({
+            'success': True,
+            'message': 'Verification successful',
+            'token': access_token,
+            'refresh': str(refresh),
+            'user_id': user.id  # Include user ID in the response
+        }, status=status.HTTP_200_OK)
 # class UserLoginView(APIView):
 #   renderer_classes = [UserRenderer]
 #   def post(self, request, format=None):
@@ -461,8 +471,8 @@ class UseradminLoginView(APIView):
             }, status=status.HTTP_200_OK)
 
         # Check if user is verified
-        
-        
+
+
 
         # Authenticate user
         user = authenticate(username=email, password=password)  # Use email as username for authentication
@@ -479,7 +489,7 @@ class UseradminLoginView(APIView):
             refresh = RefreshToken.for_user(user)
             token = str(refresh.access_token)
             profile_serializer = UserProfileSerializer(user)  # Serialize User instance if needed
-            
+
             return Response({
                 'success': True,
                 'is_verified': user.verify,
@@ -488,7 +498,7 @@ class UseradminLoginView(APIView):
                 'profile': profile_serializer.data if profile_serializer else None,
                 'message': 'Login successful.'
             }, status=status.HTTP_200_OK)
-        
+
         else:
             return Response({
                 'success': False,
