@@ -1,10 +1,29 @@
 from django.contrib import admin
 from .models import *
+from django.utils.html import format_html
+class CardAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'deck', 'price', 'color', 'card_type', 'image_preview')  # Added image_preview
+    search_fields = ('name', 'deck__name')  # Fields to search in the admin
+    list_filter = ('card_type', 'color')  # Filters for the admin list view
+    ordering = ('name',)  # Default ordering of the cards
 
+    def image_preview(self, obj):
+        if obj.images_url:
+            return format_html('<img src="{}" style="width: 150px; height: 150px;" />', obj.images_url)
+        return 'No image'
+
+    image_preview.short_description = 'Image Preview'  # Label for the image preview column
+
+admin.site.register(Card, CardAdmin)
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'image')  # Display name and image in the admin list view
+    list_display = ('id','name', 'image_preview')  # Display name and image in the admin list view
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width: 150px; height: 150px;" />', obj.image.url)
+        return 'No image'
 
+    image_preview.short_description = 'Image Preview'
 @admin.register(Tournament)
 class TournamentAdmin(admin.ModelAdmin):
     # Updated list_display to show new fields
@@ -37,7 +56,7 @@ class ScoreAdmin(admin.ModelAdmin):
 # Register the Score model with the custom admin interface
 admin.site.register(Score, ScoreAdmin)
 class DeckAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'image']  # Customize fields to display in the admin list view
+    list_display = ['id', 'name','game','user', 'image']  # Customize fields to display in the admin list view
     search_fields = ['name']  # Allow searching by name
 
 # Register the Deck model

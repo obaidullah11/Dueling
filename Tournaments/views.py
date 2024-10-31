@@ -8,15 +8,162 @@ from django.shortcuts import get_object_or_404
 from .utils import api_response
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
 from .models import Tournament
-from .serializers import TournamentSerializer, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew
+from .serializers import CardSerializer,DeckSerializercreate,TournamentSerializer, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew
 
+import requests
+class UserGameDecksView(generics.ListAPIView):
+    serializer_class = DeckSerializer
 
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        game_id = self.kwargs['game_id']
+        return Deck.objects.filter(user_id=user_id, game_id=game_id)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "success": True,
+            "message": "Decks retrieved successfully.",
+            "data": serializer.data
+        })
+class AddMultipleCardsView(APIView):
+    def post(self, request, deck_id):
+        # Ensure the specified deck exists
+        deck = get_object_or_404(Deck, id=deck_id)
+
+        # Add deck_id to each card entry in the request data
+        cards_data = request.data
+        for card_data in cards_data:
+            card_data['deck'] = deck.id  # Assign the deck_id to each card
+
+        # Serialize and save the data
+        serializer = CardSerializer(data=cards_data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": True,
+                "message": "Cards created successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            "success": False,
+            "message": "Failed to create cards.",
+            "data": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET'])
+def fetch_cards(request):
+    url = "https://api.magicthegathering.io/v1/cards"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        formatted_cards = []
+
+        # Loop through the cards and format them
+        for card in data.get('cards', []):
+            formatted_card = {
+                "ID": card.get('id'),
+                "Title": card.get('name'),
+                "Price": card.get('prices', {}).get('usd', None),  # Adjust based on the actual API structure
+                "Color": ', '.join(card.get('colors', [])),
+                "Source": card.get('set', 'Unknown'),
+                "CardType": card.get('type'),
+                "Power": card.get('power', 'N/A'),  # Adjust based on the actual API structure
+                "Effect": card.get('text', 'N/A'),
+                "Images": card.get('imageUrl', '')
+            }
+            formatted_cards.append(formatted_card)
+
+        return JsonResponse(formatted_cards, safe=False)
+    else:
+        return JsonResponse({"error": "Failed to fetch data from Magic: The Gathering API"}, status=response.status_code)
+
+class PokemonCardsView(APIView):
+    def get(self, request):
+        url = "https://api.pokemontcg.io/v2/cards"
+        
+        try:
+            # Fetch the data from the external API
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for bad responses
+            
+            data = response.json()
+            cards = data.get('data', [])
+            
+            # Process each card to extract required details
+            formatted_cards = []
+            for card in cards:
+                formatted_card = {
+                    "ID": card.get("id"),
+                    "Title": card.get("name"),
+                    "Price": card.get("cardmarket", {}).get("prices", {}).get("averageSellPrice"),  # Directly set the price
+                    "Color": card.get("types", [])[0] if card.get("types") else None,
+                    "Source": card.get("set", {}).get("name"),
+                    "CardType": card.get("supertype"),
+                    "Power": card.get("hp"),  # Get the ability name
+                    "Effect": card.get("attacks", [{}])[0].get("name") if card.get("attacks") else None,  # Attack name as Effect
+                    "Images":  card.get("images", {}).get("small"),
+                }
+                formatted_cards.append(formatted_card)
+
+            return Response(formatted_cards, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+class DeckCreateView(APIView):
+    def post(self, request):
+        data = request.data.copy()
+        print("Received data:", data)  # Debug print to check incoming request data
+
+        # Retrieve and validate user ID from the request data
+        user_id = data.get("user")
+        print("User ID from request:", user_id)  # Print user ID for debugging
+
+        if not user_id:
+            print("User ID is missing in the request.")  # Notify missing user ID
+            return Response({
+                "success": False,
+                "message": "User ID is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+            print("User found:", user)  # Confirm user retrieval
+        except User.DoesNotExist:
+            print("User not found for ID:", user_id)  # Notify if user is not found
+            return Response({
+                "success": False,
+                "message": "User not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data['user'] = user.id  # Set the user field in data
+        print("Data after setting user:", data)  # Debug print to check modified data
+
+        # Proceed with creating the Deck instance
+        serializer = DeckSerializercreate(data=data)
+        if serializer.is_valid():
+            deck = serializer.save()
+            print("Deck created successfully:", deck)  # Confirm deck creation
+            return Response({
+                "success": True,
+                "message": "Deck created successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        print("Serializer errors:", serializer.errors)  # Print serializer errors for debugging
+        return Response({
+            "success": False,
+            "message": "Failed to create deck.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 class UserParticipantsView(APIView):
     def get(self, request, user_id):
         try:

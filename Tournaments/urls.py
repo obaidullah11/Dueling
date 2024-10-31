@@ -6,6 +6,7 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path('api/decks/create/', DeckCreateView.as_view(), name='create-deck'),
     path('create-tournament/', TournamentCreateView.as_view(), name='create-tournament'),
     path('getalltournaments/', TournamentListView.as_view(), name='tournament-list'),
     path('allgames/', GameListView.as_view(), name='game-list'),  # Add this line
@@ -21,7 +22,10 @@ urlpatterns = [
     path('api/participants/<int:user_id>/', UserParticipantsView.as_view(), name='user-participants'),
     # URL for listing all banner images
     path('banner-images/', banner_image_list, name='banner_image_list'),
-
+    path('pokemon_cards/', PokemonCardsView.as_view(), name='pokemon-cards'),
+    path('magicthegatherin_cards/', fetch_cards, name='fetch_cards'),
+    path('add_decks/<int:deck_id>/', AddMultipleCardsView.as_view(), name='add-multiple-cards'),
+    path('getuserdeck/<int:user_id>/game/<int:game_id>/', UserGameDecksView.as_view(), name='user_game_decks'),
     # URL for retrieving a specific banner image by id
     path('banner-images/<int:pk>/', banner_image_detail, name='banner_image_detail'),
     path('tournaments/draft/create/<int:user_id>/', TournamentViewSet.as_view({'post': 'save_draft'}), name='save_draft'),

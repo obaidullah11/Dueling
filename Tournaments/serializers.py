@@ -5,7 +5,10 @@ from .models import *
 from rest_framework import serializers
 from .models import Tournament, Game,Deck,Participant
 from users.models import User
-
+class CardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Card
+        fields = '__all__'
 class TournamentSerializer(serializers.ModelSerializer):
     game_name = serializers.CharField(write_only=True)  # Field for passing the game name
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)  # User creating the tournament
@@ -115,10 +118,15 @@ class getTournamentSerializer(serializers.ModelSerializer):
 class ParticipantSerializer(serializers.ModelSerializer):
     tournament_name = serializers.CharField(source='tournament.tournament_name', read_only=True)
     deck_name = serializers.CharField(source='deck.name', read_only=True)
+    cards = serializers.SerializerMethodField() 
     class Meta:
         model = Participant
-        fields = ['id', 'user', 'tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score']
-
+        fields = ['id', 'user', 'tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score','cards']
+    def get_cards(self, obj):
+        if obj.deck:
+            cards = Card.objects.filter(deck=obj.deck)
+            return CardSerializer(cards, many=True).data
+        return []
 class TournamentSerializernew(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)  # Include participants
     game_name = serializers.CharField(source='game.name', read_only=True)
@@ -182,11 +190,15 @@ class newBannerImageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Image file is required.")
         return value
 
-
-class DeckSerializer(serializers.ModelSerializer):
+class DeckSerializercreate(serializers.ModelSerializer):
     class Meta:
         model = Deck
-        fields = ['id', 'name']  # Add other fields as needed
+        fields = ['user', 'game', 'name', 'image']
+class DeckSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Deck
+        fields = ['user', 'game', 'name', 'image']  # Add other fields as needed
 
 class ParticipantSerializernew(serializers.ModelSerializer):
     # Include user details

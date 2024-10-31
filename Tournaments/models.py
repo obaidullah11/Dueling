@@ -56,12 +56,28 @@ class Tournament(models.Model):
         return self.tournament_name
 class Deck(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='decks')  # Foreign key to User
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='decks') 
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='decks/')
 
     def __str__(self):
         return self.name
+class Card(models.Model):
+    deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name='cards', null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='cards/', blank=True, null=True)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    color = models.CharField(max_length=50, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    card_type = models.CharField(max_length=50, null=True, blank=True)
+    power = models.CharField(max_length=50, null=True, blank=True)
+    effect = models.CharField(max_length=255, null=True, blank=True)
+    images_url = models.URLField(blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.name or 'Unnamed Card'} - {self.title or 'No Title'}"
 class Participant(models.Model):
     PAYMENT_STATUS_CHOICES = [
         ('pending', 'Pending'),
