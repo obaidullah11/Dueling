@@ -48,4 +48,5 @@ urlpatterns = [
     path('set_verified_winner/<int:fixture_id>/', set_verified_winner, name='set_verified_winner'),
     path('set_verified_winnerall/', set_verified_winner_all, name='set_verified_winner'),
     path('fixtures/<int:pk>/create_fixtures/', FixtureViewSet.as_view({'post': 'manage_fixtures'}), name='manage-fixtures'),
+    path('getrecent/<int:user_id>/', events_today, name='events_today'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

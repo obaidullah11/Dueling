@@ -20,8 +20,78 @@ from datetime import datetime, timedelta
 import requests
 
 
+@api_view(['GET'])
+def events_today(request, user_id):
+    """
+    API to get paid events for a user that are scheduled for today.
+    Expects 'user_id' as a URL parameter.
+    """
+    try:
+        today = timezone.now().date()
+        participants = Participant.objects.filter(
+            user_id=user_id,
+            tournament__event_date=today,
+            payment_status='paid'
+        )
+        tournaments = [participant.tournament for participant in participants]
+        serializer = TournamentSerializer(tournaments, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    except Participant.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'User or tournament not found.'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class ParticipantViewSet(viewsets.ModelViewSet):
+    queryset = Participant.objects.all()
+    serializer_class = ParticipantSerializer  # Assuming you have a Participant serializer
 
+    @action(detail=False, methods=['get'], url_path='events-today')
+    def events_today(self, request):
+        """
+        API to get paid events for a user that are scheduled for today.
+        Expects a 'user_id' parameter in the query string.
+        """
+        user_id = request.query_params.get('user_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'message': 'User ID is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            today = timezone.now().date()
+            participants = Participant.objects.filter(
+                user_id=user_id,
+                tournament__event_date=today,
+                payment_status='paid'
+            )
+            tournaments = [participant.tournament for participant in participants]
+            serializer = TournamentSerializer(tournaments, many=True)
+            return Response({
+                'success': True,
+                'tournaments': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'User not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
