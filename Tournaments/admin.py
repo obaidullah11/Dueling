@@ -1,6 +1,30 @@
 from django.contrib import admin
 from .models import *
 from django.utils.html import format_html
+
+class FixtureAdmin(admin.ModelAdmin):
+    list_display = (
+        'tournament',
+        'participant1',
+        'participant2',
+        'round_number',
+        'match_date',
+        'nominated_winner',
+        'verified_winner',
+        'is_verified',
+    )
+    list_filter = ('tournament', 'round_number', 'is_verified')  # Add filters if needed
+    search_fields = ('tournament__tournament_name', 'participant1__user__username', 'participant2__user__username')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('tournament', 'participant1', 'participant2', 'nominated_winner', 'verified_winner')
+
+# Register the Fixture model with the FixtureAdmin
+admin.site.register(Fixture, FixtureAdmin)
+
+
+
 class CardAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'deck', 'price', 'color', 'card_type', 'image_preview')  # Added image_preview
     search_fields = ('name', 'deck__name')  # Fields to search in the admin

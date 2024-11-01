@@ -4,6 +4,7 @@ from rest_framework import generics
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from users.serializers import UserUpdateSerializer,SendPasswordResetEmailSerializer,DriverSerializer, UserChangePasswordSerializer, UserLoginSerializer, UserPasswordResetSerializer, UserProfileSerializer, UserRegistrationSerializer
 from django.contrib.auth import authenticate
 from users.renderers import UserRenderer
@@ -29,6 +30,11 @@ class SocialLoginOrRegisterView(APIView):
 
         if serializer.is_valid():
             user = serializer.save()
+            if not user.id:
+                # If the user doesn't have an ID, retrieve by email
+                email = request.data.get('email')  # Get email from request
+                user_by_email = get_object_or_404(User, email=email)
+                user = user_by_email  # Use the user retrieved by email
 
             # Generate JWT token
             refresh = RefreshToken.for_user(user)
@@ -46,6 +52,7 @@ class SocialLoginOrRegisterView(APIView):
                 'data': {
                     'refresh': str(refresh),
                     'access': access_token,
+                    'id': user.id,
                     'user': serializer.data
                 }
             }, status=status.HTTP_200_OK)
@@ -55,7 +62,6 @@ class SocialLoginOrRegisterView(APIView):
             'message': 'Failed to register or log in user.',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 

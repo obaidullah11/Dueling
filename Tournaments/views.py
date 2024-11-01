@@ -15,8 +15,456 @@ from rest_framework.decorators import action
 from django.utils import timezone
 from .models import Tournament
 from .serializers import CardSerializer,DeckSerializercreate,TournamentSerializer, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew
-
+import random
+from datetime import datetime, timedelta
 import requests
+
+
+
+
+
+
+
+@api_view(['POST'])
+def set_nominated_winner(request, fixture_id):
+    try:
+        fixture = Fixture.objects.get(id=fixture_id)
+    except Fixture.DoesNotExist:
+        return Response({"success": False, "message": "Fixture not found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+
+    winner_id = request.data.get("winner_id")
+    if not winner_id:
+        return Response({"success": False, "message": "winner_id not provided", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        winner = Participant.objects.get(id=winner_id)
+        fixture.nominated_winner = winner
+        fixture.save()
+        data = FixtureSerializer(fixture).data
+        return Response({"success": True, "message": "Nominated winner set successfully", "data": data}, status=status.HTTP_200_OK)
+    except Participant.DoesNotExist:
+        return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def set_verified_winner(request, fixture_id):
+    try:
+        fixture = Fixture.objects.get(id=fixture_id)
+    except Fixture.DoesNotExist:
+        return Response({"success": False, "message": "Fixture not found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+
+    winner_id = request.data.get("winner_id")
+    if not winner_id:
+        return Response({"success": False, "message": "winner_id not provided", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        winner = Participant.objects.get(id=winner_id)
+        fixture.verified_winner = winner
+        fixture.is_verified = True
+        fixture.save()
+        data = FixtureSerializer(fixture).data
+        return Response({"success": True, "message": "Verified winner set successfully", "data": data}, status=status.HTTP_200_OK)
+    except Participant.DoesNotExist:
+        return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def set_verified_winner_all(request):
+    # Get fixture winners from request data
+    fixture_winners = request.data.get("fixture_winners")
+
+    # Validate inputs
+    if not fixture_winners or not isinstance(fixture_winners, list):
+        return Response({"success": False, "message": "fixture_winners must be provided as a list of objects", "data": {}}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    updated_fixtures_data = []
+    not_found_fixtures = []
+    invalid_winners = []
+
+    for item in fixture_winners:
+        fixture_id = item.get("fixture_id")
+        winner_id = item.get("winner_id")
+
+        if fixture_id is None or winner_id is None:
+            return Response({"success": False, "message": "Both fixture_id and winner_id must be provided for each item", "data": {}}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Validate and retrieve the winner
+            winner = Participant.objects.get(id=winner_id)
+            # Retrieve the fixture
+            fixture = Fixture.objects.get(id=fixture_id)
+            # Set the verified winner
+            fixture.verified_winner = winner
+            fixture.is_verified = True
+            fixture.save()
+            updated_fixtures_data.append(FixtureSerializer(fixture).data)
+
+        except Fixture.DoesNotExist:
+            not_found_fixtures.append(fixture_id)
+        except Participant.DoesNotExist:
+            invalid_winners.append(winner_id)
+
+    # Construct response message
+    success_message = "Verified winners set successfully for the following fixtures:"
+    if updated_fixtures_data:
+        success_message += f" {', '.join(str(f['id']) for f in updated_fixtures_data)}."
+    
+    if not_found_fixtures:
+        success_message += f" The following fixture IDs were not found: {', '.join(map(str, not_found_fixtures))}."
+    
+    if invalid_winners:
+        success_message += f" The following winner IDs were invalid: {', '.join(map(str, invalid_winners))}."
+
+    return Response({
+        "success": True, 
+        "message": success_message, 
+        "data": updated_fixtures_data
+    }, status=status.HTTP_200_OK)
+
+
+
+class FixtureViewSet(viewsets.ModelViewSet):
+    queryset = Fixture.objects.all()
+    serializer_class = FixtureSerializer
+
+    @action(detail=True, methods=['post'], url_path='manage_fixtures')
+    def manage_fixtures(self, request, pk=None):
+        """
+        API to create fixtures for round 1 or advance to the next round based on existing fixtures.
+        """
+        tournament_id = pk  # Get the tournament ID from the URL
+
+        try:
+            tournament = Tournament.objects.get(id=tournament_id)
+            # Check if any fixtures exist; if not, create round 1
+            existing_fixtures = Fixture.objects.filter(tournament=tournament).order_by('-round_number')
+
+            if not existing_fixtures:
+                # Create Round 1 fixtures
+                participants = list(Participant.objects.filter(tournament=tournament))
+                num_participants = len(participants)
+                
+                if num_participants < 2:
+                    return Response({
+                        'success': False,
+                        'message': 'At least two participants are required to create fixtures.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                fixtures = []
+                match_date = datetime.combine(tournament.event_date, datetime.min.time())
+                match_date = timezone.make_aware(match_date)
+
+                if num_participants % 2 != 0:
+                    bye_participant = random.choice(participants)
+                    participants.remove(bye_participant)
+
+                    fixture = Fixture.objects.create(
+                        tournament=tournament,
+                        participant1=bye_participant,
+                        participant2=None,
+                        round_number=1,
+                        match_date=match_date,
+                        nominated_winner=bye_participant,
+                        verified_winner=bye_participant,
+                        is_verified=True
+                    )
+                    fixtures.append(fixture)
+
+                for i in range(0, len(participants), 2):
+                    if i + 1 < len(participants):
+                        fixture = Fixture.objects.create(
+                            tournament=tournament,
+                            participant1=participants[i],
+                            participant2=participants[i + 1],
+                            round_number=1,
+                            match_date=match_date
+                        )
+                        fixtures.append(fixture)
+
+                serializer = FixtureSerializer(fixtures, many=True)
+                return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
+
+            # Advance to the next round if fixtures exist
+            last_round = existing_fixtures.first().round_number
+            last_round_fixtures = Fixture.objects.filter(tournament=tournament, round_number=last_round, is_verified=True)
+
+            # Check if all fixtures in the last round are verified
+            if len(last_round_fixtures) != Fixture.objects.filter(tournament=tournament, round_number=last_round).count():
+                return Response({
+                    'success': False,
+                    'message': 'Not all matches in the current round are verified. Complete the round first.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            winners = [fixture.verified_winner for fixture in last_round_fixtures if fixture.verified_winner]
+            if len(winners) == 1:
+                # Declare the last remaining participant as the tournament winner
+                winner = winners[0]
+                return Response({
+                    'success': True,
+                    'message': f'Tournament is complete. {winner.user.username} is the winner!'
+                }, status=status.HTTP_200_OK)
+
+            if len(winners) < 2:
+                return Response({
+                    'success': False,
+                    'message': 'No further rounds are needed.'
+                }, status=status.HTTP_200_OK)
+
+            # Set match date for the new round
+            match_date = datetime.combine(tournament.event_date, datetime.min.time())
+            match_date = timezone.make_aware(match_date)
+            new_round = last_round + 1
+            fixtures = []
+
+            # If odd number of winners, give a bye
+            if len(winners) % 2 != 0:
+                bye_participant = random.choice(winners)
+                winners.remove(bye_participant)
+
+                fixture = Fixture.objects.create(
+                    tournament=tournament,
+                    participant1=bye_participant,
+                    participant2=None,
+                    round_number=new_round,
+                    match_date=match_date,
+                    nominated_winner=bye_participant,
+                    verified_winner=bye_participant,
+                    is_verified=True
+                )
+                fixtures.append(fixture)
+
+            # Create fixtures for the new round
+            for i in range(0, len(winners), 2):
+                if i + 1 < len(winners):
+                    fixture = Fixture.objects.create(
+                        tournament=tournament,
+                        participant1=winners[i],
+                        participant2=winners[i + 1],
+                        round_number=new_round,
+                        match_date=match_date
+                    )
+                    fixtures.append(fixture)
+
+            serializer = FixtureSerializer(fixtures, many=True)
+            return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
+
+        except Tournament.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Tournament not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class admingetallTournamentFixturesView(APIView):
+    def get(self, request, tournament_id):
+        try:
+            # Check if tournament exists
+            tournament = Tournament.objects.get(id=tournament_id)
+
+            # Get all fixtures for the tournament
+            fixtures = Fixture.objects.filter(tournament=tournament)
+
+            # Serialize the fixtures
+            serializer = FixtureSerializernew(fixtures, many=True)
+            return Response({
+                "success": True,
+                "message": "Fixtures retrieved successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        except Tournament.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Tournament not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+class UserTournamentFixturesView(generics.ListAPIView):
+    serializer_class = FixtureSerializer
+
+    def get_queryset(self):
+        tournament_id = self.kwargs['tournament_id']
+        user_id = self.kwargs['user_id']
+        
+        # Filter fixtures where the user is either participant1 or participant2 in the specified tournament
+        return Fixture.objects.filter(
+            tournament__id=tournament_id
+        ).filter(
+            participant1__user__id=user_id
+        ) | Fixture.objects.filter(
+            tournament__id=tournament_id
+        ).filter(
+            participant2__user__id=user_id
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({
+                "success": False,
+                "message": "No fixtures found for the specified tournament and user.",
+                "data": []
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "success": True,
+            "message": "User fixtures retrieved successfully.",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+# class FixtureViewSet(viewsets.ModelViewSet):
+#     queryset = Fixture.objects.all()
+#     serializer_class = FixtureSerializer
+
+#     @action(detail=True, methods=['post'], url_path='create_round_1_fixtures')
+#     def create_round_1_fixtures(self, request, pk=None):
+#         """
+#         API to create fixtures for round 1 of a tournament.
+#         """
+#         tournament_id = pk  # Get the tournament ID from the URL
+
+#         try:
+#             tournament = Tournament.objects.get(id=tournament_id)
+#             participants = list(Participant.objects.filter(tournament=tournament))
+
+#             num_participants = len(participants)
+#             if num_participants < 2:
+#                 return Response({
+#                     'success': False,
+#                     'message': 'At least two participants are required to create fixtures.'
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+
+#             fixtures = []
+#             match_date = datetime.combine(tournament.event_date, datetime.min.time())
+#             match_date = timezone.make_aware(match_date)
+
+#             if num_participants % 2 != 0:
+#                 bye_participant = random.choice(participants)
+#                 participants.remove(bye_participant)
+
+#                 fixture = Fixture.objects.create(
+#                     tournament=tournament,
+#                     participant1=bye_participant,
+#                     participant2=None,
+#                     round_number=1,
+#                     match_date=match_date,
+#                     nominated_winner=bye_participant,
+#                     verified_winner=bye_participant,
+#                     is_verified=True
+#                 )
+#                 fixtures.append(fixture)
+
+#             for i in range(0, len(participants), 2):
+#                 if i + 1 < len(participants):
+#                     fixture = Fixture.objects.create(
+#                         tournament=tournament,
+#                         participant1=participants[i],
+#                         participant2=participants[i + 1],
+#                         round_number=1,
+#                         match_date=match_date
+#                     )
+#                     fixtures.append(fixture)
+
+#             serializer = FixtureSerializer(fixtures, many=True)
+#             return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
+
+#         except Tournament.DoesNotExist:
+#             return Response({
+#                 'success': False,
+#                 'message': 'Tournament not found.'
+#             }, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({
+#                 'success': False,
+#                 'message': str(e)
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#     @action(detail=True, methods=['post'], url_path='advance_to_next_round')
+#     def advance_to_next_round(self, request, pk=None):
+#         """
+#         API to create fixtures for the next round based on the winners of the previous round.
+#         """
+#         tournament_id = pk
+
+#         try:
+#             tournament = Tournament.objects.get(id=tournament_id)
+#             last_round = Fixture.objects.filter(tournament=tournament).order_by('-round_number').first().round_number
+
+#             # Check if all fixtures in the last round are verified
+#             last_round_fixtures = Fixture.objects.filter(tournament=tournament, round_number=last_round, is_verified=True)
+#             if len(last_round_fixtures) != Fixture.objects.filter(tournament=tournament, round_number=last_round).count():
+#                 return Response({
+#                     'success': False,
+#                     'message': 'Not all matches in the current round are verified. Complete the round first.'
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+
+#             winners = [fixture.verified_winner for fixture in last_round_fixtures if fixture.verified_winner]
+#             if len(winners) == 1:
+#                 # Declare the last remaining participant as the tournament winner
+#                 winner = winners[0]
+#                 return Response({
+#                     'success': True,
+#                     'message': f'Tournament is complete. {winner.user.username} is the winner!'
+#                 }, status=status.HTTP_200_OK)
+
+#             if len(winners) < 2:
+#                 return Response({
+#                     'success': False,
+#                     'message': 'No further rounds are needed.'
+#                 }, status=status.HTTP_200_OK)
+
+#             # Set match date for the new round
+#             match_date = datetime.combine(tournament.event_date, datetime.min.time())
+#             match_date = timezone.make_aware(match_date)
+#             new_round = last_round + 1
+#             fixtures = []
+
+#             # If odd number of winners, give a bye
+#             if len(winners) % 2 != 0:
+#                 bye_participant = random.choice(winners)
+#                 winners.remove(bye_participant)
+
+#                 fixture = Fixture.objects.create(
+#                     tournament=tournament,
+#                     participant1=bye_participant,
+#                     participant2=None,
+#                     round_number=new_round,
+#                     match_date=match_date,
+#                     nominated_winner=bye_participant,
+#                     verified_winner=bye_participant,
+#                     is_verified=True
+#                 )
+#                 fixtures.append(fixture)
+
+#             # Create fixtures for the new round
+#             for i in range(0, len(winners), 2):
+#                 if i + 1 < len(winners):
+#                     fixture = Fixture.objects.create(
+#                         tournament=tournament,
+#                         participant1=winners[i],
+#                         participant2=winners[i + 1],
+#                         round_number=new_round,
+#                         match_date=match_date
+#                     )
+#                     fixtures.append(fixture)
+
+#             serializer = FixtureSerializer(fixtures, many=True)
+#             return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
+
+#         except Tournament.DoesNotExist:
+#             return Response({
+#                 'success': False,
+#                 'message': 'Tournament not found.'
+#             }, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({
+#                 'success': False,
+#                 'message': str(e)
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class UserGameDecksView(generics.ListAPIView):
     serializer_class = DeckSerializer
 

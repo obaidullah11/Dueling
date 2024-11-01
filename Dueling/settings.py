@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     # 'Maintenance',
     'sslserver',
     'chat',
+    # 'fixtures',
 
     # 'Dueling_Admin',
     # 'sortedm2m',

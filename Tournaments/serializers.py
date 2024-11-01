@@ -1,10 +1,15 @@
 # serializers.py
 from rest_framework import serializers
 from .models import *
+from users.serializers import UserProfileSerializer
 
 from rest_framework import serializers
-from .models import Tournament, Game,Deck,Participant
+from .models import Tournament, Game,Deck,Participant,Fixture
 from users.models import User
+
+
+
+
 class CardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Card
@@ -127,10 +132,20 @@ class ParticipantSerializer(serializers.ModelSerializer):
             cards = Card.objects.filter(deck=obj.deck)
             return CardSerializer(cards, many=True).data
         return []
+class ParticipantSerializerforfixture(serializers.ModelSerializer):
+    tournament_name = serializers.CharField(source='tournament.tournament_name', read_only=True)
+    deck_name = serializers.CharField(source='deck.name', read_only=True)
+    user = UserProfileSerializer() 
+   
+    class Meta:
+        model = Participant
+        fields = ['id', 'user', 'tournament','tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
+
 class TournamentSerializernew(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)  # Include participants
     game_name = serializers.CharField(source='game.name', read_only=True)
     created_by = serializers.CharField(source='created_by.username', read_only=True)
+    createdby_user_image = serializers.CharField(source='created_by.image', read_only=True)
     class Meta:
         model = Tournament
         fields = [
@@ -149,7 +164,8 @@ class TournamentSerializernew(serializers.ModelSerializer):
             'created_by',
             'created_at',
             'featured',
-            'participants'  # Add this line
+            'participants',
+            'createdby_user_image'  # Add this line
         ]
 class ScoreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -167,7 +183,14 @@ class createFeaturedTournamentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturedTournament
         fields = ['id', 'is_featured', 'featured_date']
-
+class ParticipantSerializerforadminviewfixture(serializers.ModelSerializer):
+    tournament = TournamentSerializernew() 
+    deck_name = serializers.CharField(source='deck.name', read_only=True)
+    user = UserProfileSerializer() 
+   
+    class Meta:
+        model = Participant
+        fields = ['id', 'user', 'tournament', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
 class BannerImageSerializer(serializers.ModelSerializer):
     tournament = TournamentSerializer()
 
@@ -198,7 +221,7 @@ class DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deck
-        fields = ['user', 'game', 'name', 'image']  # Add other fields as needed
+        fields = ['id','user', 'game', 'name', 'image']  # Add other fields as needed
 
 class ParticipantSerializernew(serializers.ModelSerializer):
     # Include user details
@@ -208,3 +231,21 @@ class ParticipantSerializernew(serializers.ModelSerializer):
     class Meta:
         model = Participant
         fields = '__all__'  # Or specify the fields you want to include
+
+
+class FixtureSerializer(serializers.ModelSerializer):
+    participant1 = ParticipantSerializerforfixture()
+    participant2 = ParticipantSerializerforfixture(allow_null=True)  # Allow null for participant2
+   
+
+    class Meta:
+        model = Fixture
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified']
+class FixtureSerializernew(serializers.ModelSerializer):
+    participant1 = ParticipantSerializer()
+    participant2 = ParticipantSerializer(allow_null=True)  # Allow null for participant2
+   
+
+    class Meta:
+        model = Fixture
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified']

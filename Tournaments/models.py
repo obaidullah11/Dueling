@@ -121,3 +121,22 @@ class BannerImage(models.Model):
 
     def __str__(self):
         return f"Banner for {self.tournament.tournament_name} (Uploaded on {self.uploaded_at})"
+class Fixture(models.Model):
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+    participant1 = models.ForeignKey(Participant, related_name='fixture_participant1', on_delete=models.CASCADE)
+    participant2 = models.ForeignKey(Participant, related_name='fixture_participant2', on_delete=models.CASCADE,null=True, blank=True,)
+    round_number = models.IntegerField()
+    match_date = models.DateTimeField()
+
+    
+    nominated_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='nominated_fixtures', on_delete=models.SET_NULL)
+    verified_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='verified_fixtures', on_delete=models.SET_NULL)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        participant1_username = self.participant1.user.username if self.participant1 and self.participant1.user else "No Participant"
+        if self.participant2:
+            participant2_username = self.participant2.user.username if self.participant2.user else "No Participant"
+            return f"{self.tournament.tournament_name} - Round {self.round_number}: {participant1_username} vs {participant2_username}"
+        else:
+            return f"{self.tournament.tournament_name} - Round {self.round_number}: {participant1_username} has a bye"

@@ -1,4 +1,6 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from users.views import UserDetailView,UpdatePasswordViewnew,UseradminLoginView,ResendOTPView,set_new_password,SocialLoginOrRegisterView,SendPasswordResetEmailView,VerifyOTP,list_users,UserUpdateAPIView, UserChangePasswordView, UserLoginView, UserProfileView, UserRegistrationView,UserDeleteAPIView, UserPasswordResetView
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
@@ -19,4 +21,4 @@ urlpatterns = [
     path('api/social_login_or_register/', SocialLoginOrRegisterView.as_view(), name='social_login_or_register'),
     path('user/<str:id>/', UserDetailView.as_view(), name='user_detail'),
     path("update-password/", UpdatePasswordViewnew.as_view(), name="update-password"),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
