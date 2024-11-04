@@ -93,7 +93,7 @@ class Participant(models.Model):
     total_score = models.IntegerField(default=0)
     is_disqualified = models.BooleanField(default=False)
     arrived_at_venue = models.BooleanField(default=False)
-    start_match=models.BooleanField(default=False)
+    is_ready=models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - {self.tournament.tournament_name} ({self.payment_status})"
@@ -128,7 +128,7 @@ class Fixture(models.Model):
     participant2 = models.ForeignKey(Participant, related_name='fixture_participant2', on_delete=models.CASCADE,null=True, blank=True,)
     round_number = models.IntegerField()
     match_date = models.DateTimeField()
-    is_ready=models.BooleanField(default=False)
+    start_time=models.BooleanField(default=False)
 
 
     nominated_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='nominated_fixtures', on_delete=models.SET_NULL)

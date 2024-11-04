@@ -13,6 +13,7 @@ class FixtureAdmin(admin.ModelAdmin):
         'nominated_winner',
         'verified_winner',
         'is_verified',
+        'start_time',
     )
     list_filter = ('tournament', 'round_number', 'is_verified')  # Add filters if needed
     search_fields = ('tournament__tournament_name', 'participant1__user__username', 'participant2__user__username')
@@ -64,7 +65,7 @@ class TournamentAdmin(admin.ModelAdmin):
     # Keep the search fields as they are relevant
     search_fields = ('tournament_name', 'email_address', 'contact_number')
 class ParticipantAdmin(admin.ModelAdmin):
-    list_display = ('user', 'tournament', 'registration_date', 'payment_status', 'total_score')  # Fields to display in the admin list view
+    list_display = ('user', 'tournament', 'registration_date', 'payment_status', 'total_score','is_ready')  # Fields to display in the admin list view
     search_fields = ('user__username', 'tournament__tournament_name')  # Allow searching by user or tournament name
     list_filter = ('tournament', 'payment_status')  # Allow filtering by tournament and payment status
     ordering = ('registration_date',)  # Order participants by registration date
