@@ -123,7 +123,7 @@ class getTournamentSerializer(serializers.ModelSerializer):
 class ParticipantSerializer(serializers.ModelSerializer):
     tournament_name = serializers.CharField(source='tournament.tournament_name', read_only=True)
     deck_name = serializers.CharField(source='deck.name', read_only=True)
-    cards = serializers.SerializerMethodField() 
+    cards = serializers.SerializerMethodField()
     class Meta:
         model = Participant
         fields = ['id', 'user', 'tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score','cards']
@@ -135,8 +135,8 @@ class ParticipantSerializer(serializers.ModelSerializer):
 class ParticipantSerializerforfixture(serializers.ModelSerializer):
     tournament_name = serializers.CharField(source='tournament.tournament_name', read_only=True)
     deck_name = serializers.CharField(source='deck.name', read_only=True)
-    user = UserProfileSerializer() 
-   
+    user = UserProfileSerializer()
+
     class Meta:
         model = Participant
         fields = ['id', 'user', 'tournament','tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
@@ -164,9 +164,23 @@ class TournamentSerializernew(serializers.ModelSerializer):
             'created_by',
             'created_at',
             'featured',
-            'participants',
-            'createdby_user_image'  # Add this line
+            'participants' ,
+            'createdby_user_image'# Add this line
         ]
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Get the current request from the context
+        request = self.context.get('request')
+
+        # Define the base URL for media files
+        base_url = "https://dueling.pythonanywhere.com/media/"
+
+        # Construct the absolute URL for the image
+        if 'createdby_user_image' in representation and representation['createdby_user_image']:
+            representation['createdby_user_image'] = f"{base_url}{representation['createdby_user_image']}"
+
+        return representation
 class ScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score
@@ -184,10 +198,10 @@ class createFeaturedTournamentSerializer(serializers.ModelSerializer):
         model = FeaturedTournament
         fields = ['id', 'is_featured', 'featured_date']
 class ParticipantSerializerforadminviewfixture(serializers.ModelSerializer):
-    tournament = TournamentSerializernew() 
+    tournament = TournamentSerializernew()
     deck_name = serializers.CharField(source='deck.name', read_only=True)
-    user = UserProfileSerializer() 
-   
+    user = UserProfileSerializer()
+
     class Meta:
         model = Participant
         fields = ['id', 'user', 'tournament', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
@@ -224,19 +238,34 @@ class DeckSerializer(serializers.ModelSerializer):
         fields = ['id','user', 'game', 'name', 'image']  # Add other fields as needed
 
 class ParticipantSerializernew(serializers.ModelSerializer):
-    # Include user details
-    tournament = TournamentSerializernew()  # Include tournament details
-    deck = DeckSerializer()  # Include deck details
+    participant_count = serializers.SerializerMethodField()  # Dynamic field for participant count
+    tournament = TournamentSerializernew()  # Nested tournament serializer
+    deck = DeckSerializer()  # Nested deck serializer
 
     class Meta:
         model = Participant
-        fields = '__all__'  # Or specify the fields you want to include
+        fields = [
+            'id',
+            'user',
+            'tournament',
+            'deck',
+            'registration_date',
+            'payment_status',
+            'participant_count',
+            'is_disqualified',
+            'arrived_at_venue',
+            'total_score'
+        ]  # Specify only the fields you want to include for control over output
+
+    def get_participant_count(self, obj):
+        # Efficiently calculate the count of participants for the given tournament
+        return Participant.objects.filter(tournament=obj.tournament).count()
 
 
 class FixtureSerializer(serializers.ModelSerializer):
     participant1 = ParticipantSerializerforfixture()
     participant2 = ParticipantSerializerforfixture(allow_null=True)  # Allow null for participant2
-   
+
 
     class Meta:
         model = Fixture
@@ -244,8 +273,37 @@ class FixtureSerializer(serializers.ModelSerializer):
 class FixtureSerializernew(serializers.ModelSerializer):
     participant1 = ParticipantSerializer()
     participant2 = ParticipantSerializer(allow_null=True)  # Allow null for participant2
-   
+
 
     class Meta:
         model = Fixture
         fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified']
+
+
+
+
+
+class ParticipantSerializernewforactivelist(serializers.ModelSerializer):
+    participant_count = serializers.SerializerMethodField()  # Dynamic field for participant count
+    tournament = TournamentSerializernew()  # Nested tournament serializer
+    deck = DeckSerializer()
+    user=UserProfileSerializer() # Nested deck serializer
+
+    class Meta:
+        model = Participant
+        fields = [
+            'id',
+            'user',
+            'tournament',
+            'deck',
+            'registration_date',
+            'payment_status',
+            'participant_count',
+            'is_disqualified',
+            'arrived_at_venue',
+            'total_score'
+        ]  # Specify only the fields you want to include for control over output
+
+    def get_participant_count(self, obj):
+        # Efficiently calculate the count of participants for the given tournament
+        return Participant.objects.filter(tournament=obj.tournament).count()

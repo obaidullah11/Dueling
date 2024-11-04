@@ -49,4 +49,10 @@ urlpatterns = [
     path('set_verified_winnerall/', set_verified_winner_all, name='set_verified_winner'),
     path('fixtures/<int:pk>/create_fixtures/', FixtureViewSet.as_view({'post': 'manage_fixtures'}), name='manage-fixtures'),
     path('getrecent/<int:user_id>/', events_today, name='events_today'),
+    path('admintoday/<int:user_id>/', TodayEventParticipantsView.as_view(), name='today_event_participants'),
+    path('eliminate-participant/<int:fixture_id>/', eliminate_participant, name='eliminate_participant'),
+    path('adminfixturelist/<int:tournament_id>/', admingetallTournamentFixturesView.as_view(), name='tournament-fixtures'),
+
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

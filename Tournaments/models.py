@@ -21,7 +21,7 @@ class CustomImageField(models.ImageField):
         # Check if value is provided; if not, return without any validation
         if value is None:
             return super().clean(value, model_instance)
-        
+
         # Ensure value is an instance of UploadedFile to access the file attribute
         if hasattr(value, 'name'):
             file_name = value.name  # Use value.name instead of self.file.name
@@ -29,34 +29,34 @@ class CustomImageField(models.ImageField):
                 raise ValidationError(
                     f'Ensure this filename has at most {self.max_length} characters (it has {len(file_name)}).'
                 )
-        
+
         return super().clean(value, model_instance)
 
 class Tournament(models.Model):
     tournament_name = models.CharField(max_length=255)
     email_address = models.EmailField()
     contact_number = models.CharField(max_length=15)
-    
+
     # New fields for event details
     event_date = models.DateField()  # The date when the event will occur
     event_start_time = models.TimeField()  # The start time of the event
     last_registration_date = models.DateField()  # Last date for participants to register
-    
+
     tournament_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # Optional
     banner_image = CustomImageField(upload_to='tournament_banners/', blank=True, null=True)  # Optional
-    
+
     # Foreign key to the Game model
     venue = models.CharField(max_length=255, blank=True, null=True)  # Optional venue for the tournament
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='tournaments')
     is_draft = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments', null=True)
-    created_at = models.DateTimeField(auto_now_add=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
     featured = models.BooleanField(default=False)
     def __str__(self):
         return self.tournament_name
 class Deck(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='decks')  # Foreign key to User
-    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='decks') 
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='decks')
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='decks/')
 
@@ -90,13 +90,14 @@ class Participant(models.Model):
     deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name='participants', null=True, blank=True)  # Foreign key to Deck
     registration_date = models.DateField(auto_now_add=True)
     payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
-    total_score = models.IntegerField(default=0) 
+    total_score = models.IntegerField(default=0)
     is_disqualified = models.BooleanField(default=False)
     arrived_at_venue = models.BooleanField(default=False)
+    start_match=models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - {self.tournament.tournament_name} ({self.payment_status})"
-    
+
 class Score(models.Model):
     Participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name='scores')
     score_value = models.IntegerField()  # or DecimalField if you want to support decimal scores
@@ -104,7 +105,7 @@ class Score(models.Model):
 
     def __str__(self):
         return f"Score for {self.Participant.user.username} in {self.Participant.tournament.tournament_name}: {self.score_value}"
-    
+
 class FeaturedTournament(models.Model):
     tournament = models.OneToOneField(Tournament, on_delete=models.CASCADE, related_name='featured_tournament')
     is_featured = models.BooleanField(default=False)
@@ -127,8 +128,9 @@ class Fixture(models.Model):
     participant2 = models.ForeignKey(Participant, related_name='fixture_participant2', on_delete=models.CASCADE,null=True, blank=True,)
     round_number = models.IntegerField()
     match_date = models.DateTimeField()
+    is_ready=models.BooleanField(default=False)
 
-    
+
     nominated_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='nominated_fixtures', on_delete=models.SET_NULL)
     verified_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='verified_fixtures', on_delete=models.SET_NULL)
     is_verified = models.BooleanField(default=False)
