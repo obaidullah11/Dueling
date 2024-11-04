@@ -126,7 +126,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
     cards = serializers.SerializerMethodField()
     class Meta:
         model = Participant
-        fields = ['id', 'user', 'tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score','cards']
+        fields = ['id', 'user', 'tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score','cards','is_ready']
     def get_cards(self, obj):
         if obj.deck:
             cards = Card.objects.filter(deck=obj.deck)
@@ -139,7 +139,7 @@ class ParticipantSerializerforfixture(serializers.ModelSerializer):
 
     class Meta:
         model = Participant
-        fields = ['id', 'user', 'tournament','tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
+        fields = ['id', 'user', 'tournament','tournament_name', 'deck_name', 'registration_date', 'payment_status', 'total_score','is_ready']
 
 class TournamentSerializernew(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)  # Include participants
@@ -204,7 +204,7 @@ class ParticipantSerializerforadminviewfixture(serializers.ModelSerializer):
 
     class Meta:
         model = Participant
-        fields = ['id', 'user', 'tournament', 'deck_name', 'registration_date', 'payment_status', 'total_score',]
+        fields = ['id', 'user', 'tournament', 'deck_name', 'registration_date', 'payment_status', 'total_score','is_ready']
 class BannerImageSerializer(serializers.ModelSerializer):
     tournament = TournamentSerializer()
 
@@ -255,6 +255,7 @@ class ParticipantSerializernew(serializers.ModelSerializer):
             'is_disqualified',
             'arrived_at_venue',
             'total_score'
+            'is_ready'
         ]  # Specify only the fields you want to include for control over output
 
     def get_participant_count(self, obj):
@@ -269,7 +270,7 @@ class FixtureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fixture
-        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified']
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time']
 class FixtureSerializernew(serializers.ModelSerializer):
     participant1 = ParticipantSerializer()
     participant2 = ParticipantSerializer(allow_null=True)  # Allow null for participant2
@@ -277,7 +278,7 @@ class FixtureSerializernew(serializers.ModelSerializer):
 
     class Meta:
         model = Fixture
-        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified']
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time']
 
 
 
@@ -302,6 +303,7 @@ class ParticipantSerializernewforactivelist(serializers.ModelSerializer):
             'is_disqualified',
             'arrived_at_venue',
             'total_score'
+            'is_ready'
         ]  # Specify only the fields you want to include for control over output
 
     def get_participant_count(self, obj):

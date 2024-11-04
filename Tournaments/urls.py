@@ -6,6 +6,8 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path('adminstartmatch/<int:tournament_id>/', adminstartmatch.as_view(), name='update_fixtures_start_time'),
+    path('participant_ready/<int:participant_id>/', UpdateParticipantReadyStatus.as_view(), name='update-participant-ready'),
     path('api/decks/create/', DeckCreateView.as_view(), name='create-deck'),
     path('create-tournament/', TournamentCreateView.as_view(), name='create-tournament'),
     path('getalltournaments/', TournamentListView.as_view(), name='tournament-list'),

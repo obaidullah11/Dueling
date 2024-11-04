@@ -35,8 +35,52 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Fixture, Participant
 from .serializers import FixtureSerializer
-
-
+class adminstartmatch(APIView):
+    def post(self, request, tournament_id):
+        try:
+            # Get the tournament instance by ID
+            tournament = Tournament.objects.get(id=tournament_id)
+        except Tournament.DoesNotExist:
+            return Response({"success": False, "message": "Tournament not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Update all fixtures related to the tournament where start_time is False
+        fixtures_updated = Fixture.objects.filter(tournament=tournament, start_time=False).update(start_time=True)
+        
+        return Response({
+            "success": True,
+            "message": f"{fixtures_updated} fixtures updated to start.",
+            "data": {
+                "tournament_id": tournament_id,
+                "fixtures_updated_count": fixtures_updated,
+            }
+        }, status=status.HTTP_200_OK)
+class UpdateParticipantReadyStatus(APIView):
+    def post(self, request, participant_id):
+        try:
+            # Get the participant instance by ID
+            participant = Participant.objects.get(id=participant_id)
+        except Participant.DoesNotExist:
+            return Response({"success": False, "message": "Participant not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Set is_ready to True
+        participant.is_ready = True
+        participant.save()
+        
+        # Prepare response data
+        data = {
+            "id": participant.id,
+            "user": participant.user.username,
+            "tournament": participant.tournament.tournament_name,
+            "is_ready": participant.is_ready,
+            "payment_status": participant.payment_status,
+            "total_score": participant.total_score,
+        }
+        
+        return Response({
+            "success": True,
+            "message": "Participant status updated to ready.",
+            "data": data
+        }, status=status.HTTP_200_OK)
 
 # class admingetallTournamentFixturesView(APIView):
 #     def get(self, request, tournament_id):
