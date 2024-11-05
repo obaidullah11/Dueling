@@ -1031,6 +1031,7 @@ class PokemonCardsView(APIView):
                     "Power": card.get("hp"),  # Get the ability name
                     "Effect": card.get("attacks", [{}])[0].get("name") if card.get("attacks") else None,  # Attack name as Effect
                     "Images":  card.get("images", {}).get("small"),
+                    "Quantity":0
                 }
                 formatted_cards.append(formatted_card)
 
