@@ -235,7 +235,7 @@ class newBannerImageSerializer(serializers.ModelSerializer):
 class DeckSerializercreate(serializers.ModelSerializer):
     class Meta:
         model = Deck
-        fields = ['user', 'game', 'name','description', 'image']
+        fields = ['id','user', 'game', 'name','description', 'image']
 class DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
