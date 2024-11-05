@@ -76,6 +76,8 @@ class Card(models.Model):
     power = models.CharField(max_length=50, null=True, blank=True)
     effect = models.CharField(max_length=255, null=True, blank=True)
     images_url = models.URLField(blank=True, null=True)
+    card_id = models.CharField(max_length=50, null=True, blank=True)  # You can adjust the max_length as needed
+    card_quantity = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name or 'Unnamed Card'} - {self.title or 'No Title'}"
