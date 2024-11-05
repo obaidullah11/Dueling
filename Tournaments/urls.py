@@ -28,6 +28,7 @@ urlpatterns = [
     path('magicthegatherin_cards/', fetch_cards, name='fetch_cards'),
     path('add_decks/<int:deck_id>/', AddMultipleCardsView.as_view(), name='add-multiple-cards'),
     path('getuserdeck/<int:user_id>/game/<int:game_id>/', UserGameDecksView.as_view(), name='user_game_decks'),
+    path('getuserdeckdata/<int:user_id>/game/<int:game_id>/', UserGameDecksViewnew.as_view(), name='user_game_decks'),
     # URL for retrieving a specific banner image by id
     path('banner-images/<int:pk>/', banner_image_detail, name='banner_image_detail'),
     path('tournaments/draft/create/<int:user_id>/', TournamentViewSet.as_view({'post': 'save_draft'}), name='save_draft'),

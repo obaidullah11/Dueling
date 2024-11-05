@@ -47,7 +47,12 @@ class TournamentSerializer(serializers.ModelSerializer):
 
         # Call the super class create method with updated validated_data
         return super().create(validated_data)
+class DeckSerializerfordeck(serializers.ModelSerializer):
+    cards = CardSerializer(many=True, read_only=True)  # Add this line to include card data
 
+    class Meta:
+        model = Deck
+        fields = ['id', 'user', 'game', 'name', 'image', 'cards']  # Inclu
 class DraftTournamentSerializer(serializers.ModelSerializer):
     game_name = serializers.CharField(write_only=True)  # Field for passing the game name
 
@@ -254,7 +259,7 @@ class ParticipantSerializernew(serializers.ModelSerializer):
             'participant_count',
             'is_disqualified',
             'arrived_at_venue',
-            'total_score'
+            'total_score',
             'is_ready'
         ]  # Specify only the fields you want to include for control over output
 
@@ -302,7 +307,7 @@ class ParticipantSerializernewforactivelist(serializers.ModelSerializer):
             'participant_count',
             'is_disqualified',
             'arrived_at_venue',
-            'total_score'
+            'total_score',
             'is_ready'
         ]  # Specify only the fields you want to include for control over output
 

@@ -59,6 +59,7 @@ class Deck(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='decks')
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='decks/')
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name

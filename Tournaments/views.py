@@ -42,10 +42,10 @@ class adminstartmatch(APIView):
             tournament = Tournament.objects.get(id=tournament_id)
         except Tournament.DoesNotExist:
             return Response({"success": False, "message": "Tournament not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         # Update all fixtures related to the tournament where start_time is False
         fixtures_updated = Fixture.objects.filter(tournament=tournament, start_time=False).update(start_time=True)
-        
+
         return Response({
             "success": True,
             "message": f"{fixtures_updated} fixtures updated to start.",
@@ -61,11 +61,11 @@ class UpdateParticipantReadyStatus(APIView):
             participant = Participant.objects.get(id=participant_id)
         except Participant.DoesNotExist:
             return Response({"success": False, "message": "Participant not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         # Set is_ready to True
         participant.is_ready = True
         participant.save()
-        
+
         # Prepare response data
         data = {
             "id": participant.id,
@@ -75,7 +75,7 @@ class UpdateParticipantReadyStatus(APIView):
             "payment_status": participant.payment_status,
             "total_score": participant.total_score,
         }
-        
+
         return Response({
             "success": True,
             "message": "Participant status updated to ready.",
@@ -921,7 +921,22 @@ class UserTournamentFixturesView(generics.ListAPIView):
 #                 'success': False,
 #                 'message': str(e)
 #             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class UserGameDecksViewnew(generics.ListAPIView):
+    serializer_class = DeckSerializerfordeck
 
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        game_id = self.kwargs['game_id']
+        return Deck.objects.filter(user_id=user_id, game_id=game_id)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "success": True,
+            "message": "Decks retrieved successfully.",
+            "data": serializer.data
+        })
 class UserGameDecksView(generics.ListAPIView):
     serializer_class = DeckSerializer
 
