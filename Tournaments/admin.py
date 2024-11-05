@@ -28,7 +28,7 @@ admin.site.register(Fixture, FixtureAdmin)
 
 
 class CardAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'deck', 'price', 'color', 'card_type', 'image_preview')  # Added image_preview
+    list_display = ('id', 'name', 'deck', 'price', 'color', 'card_type', 'image_preview','card_quantity','card_id')  # Added image_preview
     search_fields = ('name', 'deck__name')  # Fields to search in the admin
     list_filter = ('card_type', 'color')  # Filters for the admin list view
     ordering = ('name',)  # Default ordering of the cards
