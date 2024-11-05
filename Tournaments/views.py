@@ -1034,10 +1034,21 @@ class PokemonCardsView(APIView):
                 }
                 formatted_cards.append(formatted_card)
 
-            return Response(formatted_cards, status=status.HTTP_200_OK)
+            # Build the response structure
+            response_data = {
+                "success": True,
+                "message": "Cards retrieved successfully",
+                "data": formatted_cards
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
         except requests.exceptions.RequestException as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "success": False,
+                "message": str(e),
+                "data": None
+            }, status=status.HTTP_400_BAD_REQUEST)
 class DeckCreateView(APIView):
     def post(self, request):
         data = request.data.copy()
