@@ -52,7 +52,7 @@ class DeckSerializerfordeck(serializers.ModelSerializer):
 
     class Meta:
         model = Deck
-        fields = ['id', 'user', 'game', 'name', 'image', 'cards']  # Inclu
+        fields = ['id', 'user', 'game', 'name', 'image','description', 'cards']  # Inclu
 class DraftTournamentSerializer(serializers.ModelSerializer):
     game_name = serializers.CharField(write_only=True)  # Field for passing the game name
 
@@ -235,7 +235,7 @@ class newBannerImageSerializer(serializers.ModelSerializer):
 class DeckSerializercreate(serializers.ModelSerializer):
     class Meta:
         model = Deck
-        fields = ['user', 'game', 'name', 'image']
+        fields = ['user', 'game', 'name','description', 'image']
 class DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
