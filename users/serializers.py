@@ -46,6 +46,7 @@ class SocialRegistrationSerializer(serializers.ModelSerializer):
         """
         email = validated_data.get('email')
         full_name = validated_data.get('full_name', '')
+        username = validated_data.get('username', '')
         origin = validated_data.get('origin', '')
         uid = validated_data.get('uid', '')
         image = validated_data.get('image', '')
@@ -53,6 +54,7 @@ class SocialRegistrationSerializer(serializers.ModelSerializer):
         # Check if the user already exists
         user, created = User.objects.get_or_create(email=email, defaults={
             'full_name': full_name,
+            'username': username,
             'origin': origin,
             'uid': uid,
             'image': image,
@@ -61,6 +63,7 @@ class SocialRegistrationSerializer(serializers.ModelSerializer):
         # If user already exists, update the fields
         if not created:
             user.full_name = full_name
+            user.username = username
             user.origin = origin
             user.uid = uid
             user.image = image
