@@ -281,7 +281,7 @@ class TodayEventParticipantsView(APIView):
                 "message": "No events found for today.",
                 "data": []
             }
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
+            return Response(response, status=status.HTTP_200_OK)
 
 
 
