@@ -75,9 +75,20 @@ admin.site.register(Participant, ParticipantAdmin)
 
 # Create a custom admin interface for the Score model
 class MatchScoreAdmin(admin.ModelAdmin):
-    list_display = ('tournament', 'participant', 'score', 'created_at')  # Fields to display in the list view
-    search_fields = ('tournament__tournament_name', 'participant__user__username')  # Enable search by tournament name and participant username
-    list_filter = ('tournament', 'participant')  # Add filters to filter by tournament and participant
+    list_display = ('participant', 'tournament', 'rank', 'round', 'win', 'lose', 'score')  # Columns to display in the list view
+    list_filter = ('tournament', 'rank', 'round')  # Filters to add to the sidebar
+    search_fields = ('participant__name', 'tournament__name')  # Enable search by participant name and tournament name
+    ordering = ('-score',)  # Default ordering by score, highest first
+
+    # You can also add fields to be displayed in the form view if needed
+    fieldsets = (
+        (None, {
+            'fields': ('participant', 'tournament', 'rank', 'round', 'win', 'lose', 'score')
+        }),
+    )
+
+    # Optional: to make rank automatically calculated in the form, or editable depending on your use case
+    # rank can be auto-populated later, or manually edited here depending on your business logic.
 
 admin.site.register(MatchScore, MatchScoreAdmin)
 class DeckAdmin(admin.ModelAdmin):

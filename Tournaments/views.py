@@ -1,7 +1,7 @@
 # views.py
 from rest_framework import generics
 from rest_framework import status
-from .models import Tournament
+from .models import Fixture, Participant, MatchScore, Tournament
 from rest_framework.views import APIView
 from .serializers import *
 from django.shortcuts import get_object_or_404
@@ -397,12 +397,14 @@ def set_verified_winner(request, fixture_id):
         fixture.is_verified = True
         fixture.save()
 
-        # Update the match scores for both participants
-        # First, get the participants in the fixture
+        # Get the tournament related to the fixture
+        tournament = fixture.tournament
+
+        # Get the participants in the fixture
         participant1 = fixture.participant1
         participant2 = fixture.participant2
 
-        # Set score for the winner and the loser
+        # Determine winner and loser, and their respective scores
         if winner == participant1:
             winner_score = 3
             loser_score = 0
@@ -412,22 +414,44 @@ def set_verified_winner(request, fixture_id):
             loser_score = 0
             loser = participant1
 
-        # Update or create the match scores for both participants
-        MatchScore.objects.update_or_create(
-            tournament=fixture.tournament,
+        # Update or create the MatchScore for the winner
+        winner_match_score, created = MatchScore.objects.update_or_create(
+            tournament=tournament,
             participant=winner,
-            defaults={'score': winner_score}
+            defaults={
+                'round': fixture.round,
+                'win': True,
+                'lose': False,
+                'score': winner_score
+            }
         )
-        MatchScore.objects.update_or_create(
-            tournament=fixture.tournament,
+
+        # Update or create the MatchScore for the loser
+        loser_match_score, created = MatchScore.objects.update_or_create(
+            tournament=tournament,
             participant=loser,
-            defaults={'score': loser_score}
+            defaults={
+                'round': fixture.round,
+                'win': False,
+                'lose': True,
+                'score': loser_score
+            }
         )
+
+        # Calculate ranks based on score (assuming higher score gets a higher rank)
+        match_scores = MatchScore.objects.filter(tournament=tournament, round=fixture.round).order_by('-score')
+
+        # Assign ranks based on score (first gets rank 1, second gets rank 2, etc.)
+        rank = 1
+        for match_score in match_scores:
+            match_score.rank = rank
+            match_score.save()
+            rank += 1
 
         # Return the updated fixture data
         data = FixtureSerializer(fixture).data
         return Response({"success": True, "message": "Verified winner set successfully and scores updated", "data": data}, status=status.HTTP_200_OK)
-    
+
     except Participant.DoesNotExist:
         return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
