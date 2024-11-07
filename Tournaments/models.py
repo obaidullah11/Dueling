@@ -101,13 +101,15 @@ class Participant(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.tournament.tournament_name} ({self.payment_status})"
 
-class Score(models.Model):
-    Participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name='scores')
-    score_value = models.IntegerField()  # or DecimalField if you want to support decimal scores
-    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the score was recorded
+class MatchScore(models.Model):
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='match_scores')
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE, related_name='match_scores')
+    score = models.IntegerField(default=0)  # Score for the participant in the tournament
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Score for {self.Participant.user.username} in {self.Participant.tournament.tournament_name}: {self.score_value}"
+        return f"Score of {self.participant.user.username} in {self.tournament.tournament_name}: {self.score}"
+
 
 class FeaturedTournament(models.Model):
     tournament = models.OneToOneField(Tournament, on_delete=models.CASCADE, related_name='featured_tournament')

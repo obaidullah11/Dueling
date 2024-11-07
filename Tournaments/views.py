@@ -360,6 +360,26 @@ def set_nominated_winner(request, fixture_id):
     except Participant.DoesNotExist:
         return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
 
+# @api_view(['POST'])
+# def set_verified_winner(request, fixture_id):
+#     try:
+#         fixture = Fixture.objects.get(id=fixture_id)
+#     except Fixture.DoesNotExist:
+#         return Response({"success": False, "message": "Fixture not found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+
+#     winner_id = request.data.get("winner_id")
+#     if not winner_id:
+#         return Response({"success": False, "message": "winner_id not provided", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         winner = Participant.objects.get(id=winner_id)
+#         fixture.verified_winner = winner
+#         fixture.is_verified = True
+#         fixture.save()
+#         data = FixtureSerializer(fixture).data
+#         return Response({"success": True, "message": "Verified winner set successfully", "data": data}, status=status.HTTP_200_OK)
+#     except Participant.DoesNotExist:
+#         return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def set_verified_winner(request, fixture_id):
     try:
@@ -376,11 +396,40 @@ def set_verified_winner(request, fixture_id):
         fixture.verified_winner = winner
         fixture.is_verified = True
         fixture.save()
+
+        # Update the match scores for both participants
+        # First, get the participants in the fixture
+        participant1 = fixture.participant1
+        participant2 = fixture.participant2
+
+        # Set score for the winner and the loser
+        if winner == participant1:
+            winner_score = 3
+            loser_score = 0
+            loser = participant2
+        else:
+            winner_score = 3
+            loser_score = 0
+            loser = participant1
+
+        # Update or create the match scores for both participants
+        MatchScore.objects.update_or_create(
+            tournament=fixture.tournament,
+            participant=winner,
+            defaults={'score': winner_score}
+        )
+        MatchScore.objects.update_or_create(
+            tournament=fixture.tournament,
+            participant=loser,
+            defaults={'score': loser_score}
+        )
+
+        # Return the updated fixture data
         data = FixtureSerializer(fixture).data
-        return Response({"success": True, "message": "Verified winner set successfully", "data": data}, status=status.HTTP_200_OK)
+        return Response({"success": True, "message": "Verified winner set successfully and scores updated", "data": data}, status=status.HTTP_200_OK)
+    
     except Participant.DoesNotExist:
         return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
-
 @api_view(['POST'])
 def set_verified_winner_all(request):
     # Get fixture winners from request data
@@ -1293,16 +1342,16 @@ class RegisterForTournamentView(generics.CreateAPIView):
         return api_response(False, 'Registration failed.', serializer.errors)
 
 # API for creating a score for a participant
-class ScoreCreateView(generics.CreateAPIView):
-    serializer_class = ScoreSerializer
+# class ScoreCreateView(generics.CreateAPIView):
+#     serializer_class = ScoreSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            score = serializer.save()
-            return api_response(True, 'Score created successfully.', ScoreSerializer(score).data)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             score = serializer.save()
+#             return api_response(True, 'Score created successfully.', ScoreSerializer(score).data)
 
-        return api_response(False, 'Failed to create score.', serializer.errors)
+#         return api_response(False, 'Failed to create score.', serializer.errors)
 @api_view(['GET'])
 def featured_tournament_list(request):
     featured_tournaments = FeaturedTournament.objects.all()

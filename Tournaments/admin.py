@@ -74,13 +74,12 @@ class ParticipantAdmin(admin.ModelAdmin):
 admin.site.register(Participant, ParticipantAdmin)
 
 # Create a custom admin interface for the Score model
-class ScoreAdmin(admin.ModelAdmin):
-    list_display = ('Participant', 'score_value', 'created_at')  # Fields to display in the admin list view
-    search_fields = ('Participant__user__username',)  # Allow searching by participant username
-    list_filter = ('created_at',)  # Allow filtering by created date
+class MatchScoreAdmin(admin.ModelAdmin):
+    list_display = ('tournament', 'participant', 'score', 'created_at')  # Fields to display in the list view
+    search_fields = ('tournament__tournament_name', 'participant__user__username')  # Enable search by tournament name and participant username
+    list_filter = ('tournament', 'participant')  # Add filters to filter by tournament and participant
 
-# Register the Score model with the custom admin interface
-admin.site.register(Score, ScoreAdmin)
+admin.site.register(MatchScore, MatchScoreAdmin)
 class DeckAdmin(admin.ModelAdmin):
     list_display = ['id', 'name','game','user', 'image']  # Customize fields to display in the admin list view
     search_fields = ['name']  # Allow searching by name

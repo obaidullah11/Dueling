@@ -186,10 +186,7 @@ class TournamentSerializernew(serializers.ModelSerializer):
             representation['createdby_user_image'] = f"{base_url}{representation['createdby_user_image']}"
 
         return representation
-class ScoreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Score
-        fields = '__all__'
+
 
 class FeaturedTournamentSerializer(serializers.ModelSerializer):
     tournament = TournamentSerializer()
