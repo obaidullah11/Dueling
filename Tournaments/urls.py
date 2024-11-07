@@ -13,7 +13,7 @@ urlpatterns = [
     path('getalltournaments/', TournamentListView.as_view(), name='tournament-list'),
     path('allgames/', GameListView.as_view(), name='game-list'),  # Add this line
     path('tournaments/<int:tournament_id>/register/', RegisterForTournamentView.as_view(), name='register_for_tournament'),
-    
+    path('api/match_scores/tournament/<int:tournament_id>/', get_match_scores_by_tournament, name='get_match_scores_by_tournament'),
     path('featured-tournaments/', featured_tournament_list, name='featured_tournament_list'),
     path('create/featured-tournament/', create_featured_tournament, name='create_featured_tournament'),
     path('create/banner-image/', create_banner_image, name='create_banner_image'),

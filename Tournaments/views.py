@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
 from .models import Tournament
-from .serializers import  FixtureSerializernew, CardSerializer,DeckSerializercreate,TournamentSerializer,TournamentSerializernew, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew,ParticipantSerializernewforactivelist
+from .serializers import  MatchScoreSerializer,FixtureSerializernew, CardSerializer,DeckSerializercreate,TournamentSerializer,TournamentSerializernew, DraftTournamentSerializer,ParticipantSerializer,ParticipantSerializernew,ParticipantSerializernewforactivelist
 import random
 from datetime import datetime, timedelta
 import requests
@@ -34,7 +34,36 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Fixture, Participant
-from .serializers import FixtureSerializer
+from .serializers import FixtureSerializer,MatchScoreSerializer
+
+@api_view(['GET'])
+def get_match_scores_by_tournament(request, tournament_id):
+    try:
+        # Fetch all match scores for the given tournament_id
+        match_scores = MatchScore.objects.filter(tournament_id=tournament_id)
+
+        if not match_scores:
+            return Response({
+                "success": False,
+                "message": "No match scores found for this tournament.",
+                "data": []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the match scores data
+        serialized_data = MatchScoreSerializer(match_scores, many=True)
+
+        return Response({
+            "success": True,
+            "message": "Match scores fetched successfully",
+            "data": serialized_data.data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e),
+            "data": []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 class adminstartmatch(APIView):
     def post(self, request, tournament_id):
         try:

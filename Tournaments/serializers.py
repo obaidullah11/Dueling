@@ -4,7 +4,7 @@ from .models import *
 from users.serializers import UserProfileSerializer
 
 from rest_framework import serializers
-from .models import Tournament, Game,Deck,Participant,Fixture
+from .models import Tournament, Game,Deck,Participant,Fixture,MatchScore
 from users.models import User
 
 
@@ -311,3 +311,10 @@ class ParticipantSerializernewforactivelist(serializers.ModelSerializer):
     def get_participant_count(self, obj):
         # Efficiently calculate the count of participants for the given tournament
         return Participant.objects.filter(tournament=obj.tournament).count()
+
+
+class MatchScoreSerializer(serializers.ModelSerializer):
+    Participant=UserProfileSerializer()
+    class Meta:
+        model = MatchScore
+        fields = ['id', 'participant', 'tournament', 'rank', 'round', 'win', 'lose', 'score']
