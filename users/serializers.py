@@ -31,13 +31,14 @@ class AdminLoginSerializer(serializers.Serializer):
 class SocialRegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     origin = serializers.CharField(required=False, allow_blank=True)
     uid = serializers.CharField(required=False, allow_blank=True)
     image = serializers.URLField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'origin', 'uid', 'image']
+        fields = ['email', 'full_name','username', 'origin', 'uid', 'image']
 
     def create(self, validated_data):
         """
