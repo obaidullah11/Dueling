@@ -1713,6 +1713,37 @@ class TournamentViewSet(viewsets.ViewSet):
             'message': 'Eligible participants retrieved successfully.',
             'data': participants_data
         })
+    @action(detail=True, methods=['get'])
+    def Tournament_participants(self, request, pk=None):
+        """
+        API to get all participants of a specific tournament where:
+        - payment_status is 'paid'
+        - is_disqualified is False
+        - arrived_at_venue is True
+        """
+        try:
+            tournament = Tournament.objects.get(pk=pk)
+        except Tournament.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Tournament not found.'
+            }, status=404)
+
+        participants = Participant.objects.filter(
+            tournament=tournament,
+            payment_status='paid',
+            is_disqualified=False,
+            
+        ).select_related('user')
+
+        # Serialize participants
+        participants_data = ParticipantSerializernewforactivelist(participants, many=True).data
+
+        return Response({
+            'success': True,
+            'message': 'Eligible participants retrieved successfully.',
+            'data': participants_data
+        })
     @action(detail=True, methods=['put'])
     def update_draft(self, request, pk=None):
         """API to update draft tournament."""
