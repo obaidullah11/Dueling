@@ -272,7 +272,7 @@ class FixtureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fixture
-        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time']
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time','is_tournament_completed']
 class FixtureSerializernew(serializers.ModelSerializer):
     participant1 = ParticipantSerializer()
     participant2 = ParticipantSerializer(allow_null=True)  # Allow null for participant2
@@ -280,7 +280,7 @@ class FixtureSerializernew(serializers.ModelSerializer):
 
     class Meta:
         model = Fixture
-        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time']
+        fields = ['id', 'tournament', 'participant1', 'participant2', 'round_number', 'match_date', 'nominated_winner', 'verified_winner', 'is_verified','start_time','is_tournament_completed']
 
 
 

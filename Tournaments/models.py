@@ -141,6 +141,7 @@ class Fixture(models.Model):
     nominated_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='nominated_fixtures', on_delete=models.SET_NULL)
     verified_winner = models.ForeignKey(Participant, null=True, blank=True, related_name='verified_fixtures', on_delete=models.SET_NULL)
     is_verified = models.BooleanField(default=False)
+    is_tournament_completed=models.BooleanField(default=False)
 
     def __str__(self):
         # Assuming `Participant` has a `user` field linked to `User` model

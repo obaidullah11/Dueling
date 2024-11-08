@@ -728,6 +728,7 @@ def set_verified_winner_all(request):
 #                 'success': False,
 #                 'message': str(e)
 #             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class FixtureViewSet(viewsets.ModelViewSet):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
@@ -812,6 +813,10 @@ class FixtureViewSet(viewsets.ModelViewSet):
                 # If only one winner remains, they win the tournament
                 winner = winners[0]
                 winner_data = ParticipantSerializerforfixture(winner).data
+                
+                # Update `is_tournament_completed` for all fixtures in this tournament
+                Fixture.objects.filter(tournament=tournament).update(is_tournament_completed=True)
+                
                 return Response({
                     'success': True,
                     'message': f'Tournament is complete. {winner.user.username} is the winner!',
@@ -871,6 +876,7 @@ class FixtureViewSet(viewsets.ModelViewSet):
                 'success': False,
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # class FixtureViewSet(viewsets.ModelViewSet):
 #     queryset = Fixture.objects.all()
 #     serializer_class = FixtureSerializer

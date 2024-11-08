@@ -14,6 +14,7 @@ class FixtureAdmin(admin.ModelAdmin):
         'verified_winner',
         'is_verified',
         'start_time',
+        'is_tournament_completed',
     )
     list_filter = ('tournament', 'round_number', 'is_verified')  # Add filters if needed
     search_fields = ('tournament__tournament_name', 'participant1__user__username', 'participant2__user__username')
