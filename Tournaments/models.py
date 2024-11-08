@@ -143,9 +143,11 @@ class Fixture(models.Model):
     is_verified = models.BooleanField(default=False)
 
     def __str__(self):
-        participant1_username = self.participant1.user.username if self.participant1 and self.participant1.user else "No Participant"
+        # Assuming `Participant` has a `user` field linked to `User` model
+        participant1_username = self.participant1.user.username if self.participant1 and hasattr(self.participant1, 'user') else "No Participant"
+
         if self.participant2:
-            participant2_username = self.participant2.user.username if self.participant2.user else "No Participant"
+            participant2_username = self.participant2.user.username if hasattr(self.participant2, 'user') else "No Participant"
             return f"{self.tournament.tournament_name} - Round {self.round_number}: {participant1_username} vs {participant2_username}"
         else:
             return f"{self.tournament.tournament_name} - Round {self.round_number}: {participant1_username} has a bye"

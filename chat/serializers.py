@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import ChatMessage
 from users.models import User
 from Tournaments.models import Game
+from users.serializers import UserProfileSerializer
+
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
@@ -24,9 +26,11 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         }
         return representation
 class ChatMessageSerializernew(serializers.ModelSerializer):
+    user = UserProfileSerializer()
     username = serializers.CharField(source='user.username', read_only=True)
     game_name = serializers.CharField(source='game.name', read_only=True)
+    game_image = serializers.CharField(source='game.image', read_only=True)
 
     class Meta:
         model = ChatMessage
-        fields = ['username', 'user','message', 'game_name', 'timestamp']
+        fields = ['username', 'user','message', 'game_name','game_image', 'timestamp']

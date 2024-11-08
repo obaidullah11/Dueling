@@ -485,10 +485,10 @@ def set_verified_winner(request, fixture_id):
         return Response({"success": False, "message": "Invalid winner_id", "data": {}}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def set_verified_winner_all(request):
-    # Get fixture winners from request data
     fixture_winners = request.data.get("fixture_winners")
 
-    # Validate inputs
+    print(f"Received fixture_winners: {fixture_winners}")
+
     if not fixture_winners or not isinstance(fixture_winners, list):
         return Response({"success": False, "message": "fixture_winners must be provided as a list of objects", "data": {}},
                         status=status.HTTP_400_BAD_REQUEST)
@@ -501,36 +501,89 @@ def set_verified_winner_all(request):
         fixture_id = item.get("fixture_id")
         winner_id = item.get("winner_id")
 
+        print(f"Processing fixture ID: {fixture_id}, winner ID: {winner_id}")
+
         if fixture_id is None or winner_id is None:
             return Response({"success": False, "message": "Both fixture_id and winner_id must be provided for each item", "data": {}},
                             status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Validate and retrieve the winner
+            # Retrieve the winner and fixture
             winner = Participant.objects.get(id=winner_id)
-            # Retrieve the fixture
+            print(f"Winner found: {winner}")
+
             fixture = Fixture.objects.get(id=fixture_id)
-            # Set the verified winner
+            print(f"Fixture found: {fixture}, Participant1: {fixture.participant1}, Participant2: {fixture.participant2}")
+
+            # Determine the loser based on fixture participants
+            if fixture.participant1 == winner:
+                loser = fixture.participant2
+                print(f"Loser identified as: {loser} (fixture.participant2)")
+            elif fixture.participant2 == winner:
+                loser = fixture.participant1
+                print(f"Loser identified as: {loser} (fixture.participant1)")
+            else:
+                print(f"Error: Winner ID {winner_id} is not part of fixture {fixture_id}")
+                return Response({"success": False, "message": f"Winner ID {winner_id} is not part of fixture {fixture_id}."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Get the round number from the fixture
+            round_number = fixture.round_number
+            print(f"Round number: {round_number}")
+
+            # Update fixture to set the verified winner
             fixture.verified_winner = winner
             fixture.is_verified = True
             fixture.save()
+            print(f"Fixture updated with verified winner: {fixture.verified_winner}")
+
+            # Update or create MatchScore for the winner
+            winner_score, created = MatchScore.objects.get_or_create(
+                participant=winner,
+                tournament=fixture.tournament,
+                round=round_number  # Add round to the match score
+            )
+            winner_score.score += 3  # Add 3 points for winner
+            winner_score.win = True
+            winner_score.lose = False
+            winner_score.save()
+            print(f"Winner score updated: {winner_score}")
+
+            # Update or create MatchScore for the loser
+            if loser:
+                loser_score, created = MatchScore.objects.get_or_create(
+                    participant=loser,
+                    tournament=fixture.tournament,
+                    round=round_number  # Add round to the match score
+                )
+                loser_score.score = 0  # Loser gets 0 points
+                loser_score.win = False
+                loser_score.lose = True
+                loser_score.save()
+                print(f"Loser score updated: {loser_score}")
+            else:
+                print("No loser found to update score.")
+
+            # Add fixture data to the response
             updated_fixtures_data.append(FixtureSerializer(fixture).data)
 
         except Fixture.DoesNotExist:
             not_found_fixtures.append(fixture_id)
+            print(f"Fixture ID {fixture_id} not found")
         except Participant.DoesNotExist:
             invalid_winners.append(winner_id)
+            print(f"Participant ID {winner_id} not found")
 
     # Construct response message
     success_message = "Verified winners set successfully for the following fixtures:"
     if updated_fixtures_data:
         success_message += f" {', '.join(str(f['id']) for f in updated_fixtures_data)}."
-
     if not_found_fixtures:
         success_message += f" The following fixture IDs were not found: {', '.join(map(str, not_found_fixtures))}."
-
     if invalid_winners:
         success_message += f" The following winner IDs were invalid: {', '.join(map(str, invalid_winners))}."
+
+    print(f"Response message: {success_message}")
 
     return Response({
         "success": True,
