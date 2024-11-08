@@ -111,7 +111,7 @@ class MatchScore(models.Model):
     score = models.IntegerField(default=0)  # Score of the participant
 
     def __str__(self):
-        return f"{self.participant.name} - {self.tournament.name} ({self.score} points)"
+        return f"{self.participant.user.username} - {self.tournament.tournament_name} ({self.score} points)"
 
 class FeaturedTournament(models.Model):
     tournament = models.OneToOneField(Tournament, on_delete=models.CASCADE, related_name='featured_tournament')
