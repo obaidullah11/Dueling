@@ -14,11 +14,28 @@ from pathlib import Path
 import os
 from datetime import timedelta
 
+# settings.py
+
 import firebase_admin
-from firebase_admin import credentials,initialize_app
-from firebase_admin.exceptions import FirebaseError
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from firebase_admin import credentials,firestore
+import os
 BASE_DIR = Path(__file__).resolve().parent.parent
+# print("path",BASE_DIR)
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'Dueling', 'firbase.json')
+# print(f"Firebase credentials file path: {FIREBASE_CREDENTIALS_PATH}"
+# Path to Firebase credentials JSON file
+# FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'Dueling\firebase.json')
+
+# Initialize Firebase if not already initialized
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    firebase_admin.initialize_app(cred)
+    print("Firebase initialized successfully.")
+else:
+    print("Firebase already initialized.")
+db = firestore.client()
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 # service_account_json = os.path.join(BASE_DIR, 'Dueling', 'adminsdk.json')
 # try:
 #     cred = credentials.Certificate(service_account_json)

@@ -4,6 +4,7 @@ from rest_framework import status
 from .models import Fixture, Participant, MatchScore, Tournament
 from rest_framework.views import APIView
 from .serializers import *
+from firebase_admin import credentials, firestore
 from django.shortcuts import get_object_or_404
 from .utils import api_response
 from rest_framework.decorators import api_view
@@ -728,7 +729,7 @@ def set_verified_winner_all(request):
 #                 'success': False,
 #                 'message': str(e)
 #             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+db = firestore.client()
 class FixtureViewSet(viewsets.ModelViewSet):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
@@ -775,6 +776,7 @@ class FixtureViewSet(viewsets.ModelViewSet):
                         is_verified=True
                     )
                     fixtures.append(fixture)
+                    self.create_firestore_record(fixture)  # Added Firestore record creation
 
                 # Create match fixtures for Round 1
                 for i in range(0, len(participants), 2):
@@ -787,6 +789,7 @@ class FixtureViewSet(viewsets.ModelViewSet):
                             match_date=match_date
                         )
                         fixtures.append(fixture)
+                        self.create_firestore_record(fixture)  # Added Firestore record creation
 
                 serializer = FixtureSerializer(fixtures, many=True)
                 return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
@@ -813,10 +816,6 @@ class FixtureViewSet(viewsets.ModelViewSet):
                 # If only one winner remains, they win the tournament
                 winner = winners[0]
                 winner_data = ParticipantSerializerforfixture(winner).data
-                
-                # Update `is_tournament_completed` for all fixtures in this tournament
-                Fixture.objects.filter(tournament=tournament).update(is_tournament_completed=True)
-                
                 return Response({
                     'success': True,
                     'message': f'Tournament is complete. {winner.user.username} is the winner!',
@@ -850,6 +849,7 @@ class FixtureViewSet(viewsets.ModelViewSet):
                     is_verified=True
                 )
                 fixtures.append(fixture)
+                self.create_firestore_record(fixture)  # Added Firestore record creation
 
             # Create fixtures for the new round
             for i in range(0, len(winners), 2):
@@ -862,6 +862,7 @@ class FixtureViewSet(viewsets.ModelViewSet):
                         match_date=match_date
                     )
                     fixtures.append(fixture)
+                    self.create_firestore_record(fixture)  # Added Firestore record creation
 
             serializer = FixtureSerializer(fixtures, many=True)
             return Response({'success': True, 'fixtures': serializer.data}, status=status.HTTP_201_CREATED)
@@ -876,6 +877,92 @@ class FixtureViewSet(viewsets.ModelViewSet):
                 'success': False,
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    
+    def create_firestore_record(self, fixture):
+        # Create a Firestore document in the "tournaments" collection for the given fixture
+            tournament_name = fixture.tournament.tournament_name
+            round_number = fixture.round_number
+
+            # Prepare participant1 data
+            participant1_data = {
+                "id": fixture.participant1.id if fixture.participant1 else None,
+                "user": {
+                    "contact": fixture.participant1.user.contact if fixture.participant1 else None,
+                    "id": fixture.participant1.user.id if fixture.participant1 else None,
+                    "email": fixture.participant1.user.email if fixture.participant1 else None,
+                    "username": fixture.participant1.user.username if fixture.participant1 else None,
+                    "user_type": fixture.participant1.user.user_type if fixture.participant1 else None,
+                    "is_active": fixture.participant1.user.is_active if fixture.participant1 else None,
+                    "is_admin": fixture.participant1.user.is_admin if fixture.participant1 else None,
+                    "created_at": fixture.participant1.user.created_at.isoformat() if fixture.participant1 else None,
+                    "updated_at": fixture.participant1.user.updated_at.isoformat() if fixture.participant1 else None,
+                    "image": fixture.participant1.user.image.url if fixture.participant1 and fixture.participant1.user.image else None,
+                    "is_registered": fixture.participant1.user.is_registered if fixture.participant1 else None,
+                    "is_deleted": fixture.participant1.user.is_deleted if fixture.participant1 else None,
+                    "full_name": fixture.participant1.user.full_name if fixture.participant1 else None,
+                    "address": fixture.participant1.user.address if fixture.participant1 else None,
+                    "longitude": fixture.participant1.user.longitude if fixture.participant1 else None,
+                    "latitude": fixture.participant1.user.latitude if fixture.participant1 else None,
+                },
+                "tournament": fixture.participant1.tournament.id if fixture.participant1 else None,
+                "tournament_name": fixture.participant1.tournament.tournament_name if fixture.participant1 else None,
+                "deck_name": fixture.participant1.deck.name if fixture.participant1 else None,
+                "registration_date": fixture.participant1.registration_date.isoformat() if fixture.participant1 else None,
+                "payment_status": fixture.participant1.payment_status if fixture.participant1 else None,
+                "total_score": fixture.participant1.total_score if fixture.participant1 else None,
+                "is_ready": fixture.participant1.is_ready if fixture.participant1 else None
+            } if fixture.participant1 else None
+
+            # Prepare participant2 data (similar to participant1)
+            participant2_data = {
+                "id": fixture.participant2.id if fixture.participant2 else None,
+                "user": {
+                    "contact": fixture.participant2.user.contact if fixture.participant2 else None,
+                    "id": fixture.participant2.user.id if fixture.participant2 else None,
+                    "email": fixture.participant2.user.email if fixture.participant2 else None,
+                    "username": fixture.participant2.user.username if fixture.participant2 else None,
+                    "user_type": fixture.participant2.user.user_type if fixture.participant2 else None,
+                    "is_active": fixture.participant2.user.is_active if fixture.participant2 else None,
+                    "is_admin": fixture.participant2.user.is_admin if fixture.participant2 else None,
+                    "created_at": fixture.participant2.user.created_at.isoformat() if fixture.participant2 else None,
+                    "updated_at": fixture.participant2.user.updated_at.isoformat() if fixture.participant2 else None,
+                    "image": fixture.participant2.user.image.url if fixture.participant2 and fixture.participant2.user.image else None,
+                    "is_registered": fixture.participant2.user.is_registered if fixture.participant2 else None,
+                    "is_deleted": fixture.participant2.user.is_deleted if fixture.participant2 else None,
+                    "full_name": fixture.participant2.user.full_name if fixture.participant2 else None,
+                    "address": fixture.participant2.user.address if fixture.participant2 else None,
+                    "longitude": fixture.participant2.user.longitude if fixture.participant2 else None,
+                    "latitude": fixture.participant2.user.latitude if fixture.participant2 else None,
+                },
+                "tournament": fixture.participant2.tournament.id if fixture.participant2 else None,
+                "tournament_name": fixture.participant2.tournament.tournament_name if fixture.participant2 else None,
+                "deck_name": fixture.participant2.deck.name if fixture.participant2 else None,
+                "registration_date": fixture.participant2.registration_date.isoformat() if fixture.participant2 else None,
+                "payment_status": fixture.participant2.payment_status if fixture.participant2 else None,
+                "total_score": fixture.participant2.total_score if fixture.participant2 else None,
+                "is_ready": fixture.participant2.is_ready if fixture.participant2 else None
+            } if fixture.participant2 else None
+
+            # Create the match data dictionary
+            match_data = {
+                "id": fixture.id,
+                "tournament": fixture.tournament.id,
+                "participant1": participant1_data,
+                "participant2": participant2_data,
+                "round_number": round_number,
+                "match_date": fixture.match_date.isoformat(),
+                "nominated_winner": fixture.nominated_winner.id if fixture.nominated_winner else None,
+                "verified_winner": fixture.verified_winner.id if fixture.verified_winner else None,
+                "is_verified": fixture.is_verified,
+                "start_time": fixture.start_time if hasattr(fixture, 'start_time') else None,  # Ensure `start_time` exists
+                "is_tournament_completed": fixture.is_tournament_completed
+            }
+
+            print(f"Creating Firestore record for fixture: {match_data}")
+
+            tournament_ref = db.collection(tournament_name).add(match_data)
+
 
 # class FixtureViewSet(viewsets.ModelViewSet):
 #     queryset = Fixture.objects.all()

@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+firebase.json
 # Django stuff:
 *.log
 local_settings.py
