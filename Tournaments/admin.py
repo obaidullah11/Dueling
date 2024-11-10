@@ -57,7 +57,7 @@ class TournamentAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'tournament_name', 'email_address', 'contact_number',
         'event_date', 'event_start_time', 'last_registration_date',
-        'tournament_fee', 'game'
+        'tournament_fee', 'game','is_active',
     )
 
     # Updated list_filter to filter by event_date and game

@@ -23,7 +23,7 @@ class TournamentSerializer(serializers.ModelSerializer):
         fields = [
             'id','tournament_name', 'email_address', 'contact_number',
             'event_date', 'event_start_time', 'last_registration_date',
-            'tournament_fee', 'banner_image', 'venue','game_name', 'is_draft', 'created_by','created_at','featured',
+            'tournament_fee', 'banner_image', 'venue','game_name', 'is_draft', 'created_by','created_at','featured','is_active',
         ]
 
     def create(self, validated_data):
@@ -62,7 +62,7 @@ class DraftTournamentSerializer(serializers.ModelSerializer):
         fields = [
             'id','tournament_name', 'email_address', 'contact_number','venue',
             'event_date', 'event_start_time', 'last_registration_date',
-            'tournament_fee', 'banner_image', 'game_name', 'is_draft'
+            'tournament_fee', 'banner_image', 'game_name', 'is_draft','is_active',
         ]
 
     def create(self, validated_data):
@@ -123,7 +123,7 @@ class getTournamentSerializer(serializers.ModelSerializer):
         fields = [
             'tournament_name', 'email_address', 'contact_number', 'venue',
             'event_date', 'event_start_time', 'last_registration_date',
-            'tournament_fee', 'banner_image', 'game_name'
+            'tournament_fee', 'banner_image', 'game_name','is_active',
         ]
 class ParticipantSerializer(serializers.ModelSerializer):
     tournament_name = serializers.CharField(source='tournament.tournament_name', read_only=True)
@@ -170,6 +170,7 @@ class TournamentSerializernew(serializers.ModelSerializer):
             'created_at',
             'featured',
             'participants' ,
+            'is_active',
             'createdby_user_image'# Add this line
         ]
     def to_representation(self, instance):

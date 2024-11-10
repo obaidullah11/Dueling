@@ -52,6 +52,7 @@ class Tournament(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     featured = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     def __str__(self):
         return self.tournament_name
 class Deck(models.Model):
